@@ -1,0 +1,218 @@
+
+// import { useState, useEffect } from "react";
+// import { useNavigate } from "react-router-dom";
+// import Navbar from "../components/Navbar";
+// import Footer from "../components/Footer";
+// import BlogFilterBar from "../components/BlogFilterBar";
+// import { motion } from "framer-motion";
+// import { GridSkeleton } from "../components/LoadingStates";
+// import { blogPosts } from "../data/blogPosts";
+// import useViewPreferences from "../hooks/useViewPreferences";
+// import { Badge } from "../components/ui/badge";
+// import { Button } from "../components/ui/button";
+// import type { BlogPost } from "../data/blogPosts";
+// import Pagination from "../components/Pagination";
+
+// const ITEMS_PER_PAGE = 6;
+
+// const Blog = () => {
+//   const navigate = useNavigate();
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [currentPage, setCurrentPage] = useState(1);
+  
+//   const { 
+//     viewMode, 
+//     selectedCategories, 
+//     sortOrder, 
+//     searchQuery, 
+//     setViewMode, 
+//     setSelectedCategories, 
+//     setSortOrder, 
+//     setSearchQuery 
+//   } = useViewPreferences("blog-preferences");
+
+//   // Récupérer toutes les catégories uniques
+//   const allCategories = Array.from(
+//     new Set(blogPosts.flatMap(post => post.categories))
+//   ).sort();
+
+//   useEffect(() => {
+//     const timer = setTimeout(() => {
+//       setIsLoading(false);
+//     }, 1000);
+//     return () => clearTimeout(timer);
+//   }, []);
+
+//   // Réinitialiser la page quand les filtres changent
+//   useEffect(() => {
+//     setCurrentPage(1);
+//   }, [searchQuery, selectedCategories, sortOrder]);
+
+//   const filteredPosts = blogPosts
+//     .filter(post => {
+//       const matchesCategories = !selectedCategories || selectedCategories.length === 0 || 
+//         post.categories.some(cat => selectedCategories.includes(cat));
+      
+//       const matchesSearch = !searchQuery || searchQuery.trim() === "" || 
+//         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+//         post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+      
+//       return matchesCategories && matchesSearch;
+//     })
+//     .sort((a, b) => {
+//       if (sortOrder === "newest") {
+//         return new Date(b.date).getTime() - new Date(a.date).getTime();
+//       }
+//       return new Date(a.date).getTime() - new Date(b.date).getTime();
+//     });
+
+//   // Pagination
+//   const totalPages = Math.ceil(filteredPosts.length / ITEMS_PER_PAGE);
+//   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+//   const paginatedPosts = filteredPosts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+//   const handleCategoryToggle = (category: string) => {
+//     if (!selectedCategories) {
+//       setSelectedCategories([category]);
+//       return;
+//     }
+//     setSelectedCategories(
+//       selectedCategories.includes(category)
+//         ? selectedCategories.filter(c => c !== category)
+//         : [...selectedCategories, category]
+//     );
+//   };
+
+//   const handleReadMore = (slug: string) => {
+//     navigate(`/blog/${slug}`);
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-white">
+//       <Navbar />
+//       <main className="container mx-auto px-4 py-20">
+//         <motion.div
+//           initial={{ opacity: 0, y: 20 }}
+//           animate={{ opacity: 1, y: 0 }}
+//           className="text-center mb-12"
+//         >
+//           <h1 className="text-4xl font-bold text-gray-900 mb-4">
+//             Blog & Actualités
+//           </h1>
+//           <p className="text-gray-600 max-w-2xl mx-auto">
+//             Découvrez mes derniers articles sur le développement web, 
+//             les nouvelles technologies et les meilleures pratiques.
+//           </p>
+//         </motion.div>
+
+//         <BlogFilterBar
+//           categories={allCategories}
+//           selectedCategories={selectedCategories || []}
+//           searchQuery={searchQuery}
+//           isGridView={viewMode === "grid"}
+//           sortByDateAsc={sortOrder === "oldest"}
+//           onSearchChange={setSearchQuery}
+//           onCategoryToggle={handleCategoryToggle}
+//           onViewToggle={() => setViewMode(prev => prev === "grid" ? "list" : "grid")}
+//           onSortToggle={() => setSortOrder(prev => prev === "newest" ? "oldest" : "newest")}
+//         />
+
+//         {!isLoading && filteredPosts.length === 0 && (
+//           <motion.p
+//             className="text-center text-gray-500 mt-8"
+//             initial={{ opacity: 0 }}
+//             animate={{ opacity: 1 }}
+//           >
+//             Aucun article ne correspond à vos critères de recherche.
+//           </motion.p>
+//         )}
+
+//         <div className="mt-8">
+//           {isLoading ? (
+//             <GridSkeleton count={6} />
+//           ) : (
+//             <motion.div
+//               initial={{ opacity: 0 }}
+//               animate={{ opacity: 1 }}
+//               transition={{ duration: 0.5 }}
+//               className={`grid ${
+//                 viewMode === "grid"
+//                   ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+//                   : "grid-cols-1"
+//               } gap-6`}
+//             >
+//               {paginatedPosts.map((post) => (
+//                 <motion.article
+//                   key={post.slug}
+//                   initial={{ opacity: 0, y: 20 }}
+//                   animate={{ opacity: 1, y: 0 }}
+//                   className={`bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 ${
+//                     viewMode === "list" ? "flex" : ""
+//                   }`}
+//                 >
+//                   <div className={`${viewMode === "list" ? "w-72" : "w-full"} relative`}>
+//                     <img
+//                       src={post.image}
+//                       alt={post.title}
+//                       className="w-full h-48 object-cover"
+//                     />
+//                   </div>
+//                   <div className="p-6 flex flex-col flex-1">
+//                     <div className="flex flex-wrap gap-2 mb-3">
+//                       {post.categories.map((category) => (
+//                         <Badge
+//                           key={category}
+//                           variant={selectedCategories?.includes(category) ? "default" : "outline"}
+//                           className="cursor-pointer"
+//                           onClick={() => handleCategoryToggle(category)}
+//                         >
+//                           {category}
+//                         </Badge>
+//                       ))}
+//                     </div>
+//                     <h2 className="text-xl font-semibold text-gray-900 mb-2">
+//                       {post.title}
+//                     </h2>
+//                     <p className="text-gray-600 mb-4">
+//                       {post.excerpt}
+//                     </p>
+//                     <div className="mt-auto flex items-center justify-between">
+//                       <span className="text-sm text-gray-500">
+//                         {new Date(post.date).toLocaleDateString("fr-FR", {
+//                           year: "numeric",
+//                           month: "long",
+//                           day: "numeric",
+//                         })}
+//                       </span>
+//                       <Button
+//                         variant="outline"
+//                         size="sm"
+//                         onClick={() => handleReadMore(post.slug)}
+//                         className="ml-auto"
+//                       >
+//                         Lire la suite
+//                       </Button>
+//                     </div>
+//                   </div>
+//                 </motion.article>
+//               ))}
+//             </motion.div>
+//           )}
+
+//           {!isLoading && filteredPosts.length > ITEMS_PER_PAGE && (
+//             <div className="mt-8 flex justify-center">
+//               <Pagination
+//                 currentPage={currentPage}
+//                 totalPages={totalPages}
+//                 onPageChange={setCurrentPage}
+//               />
+//             </div>
+//           )}
+//         </div>
+//       </main>
+//       <Footer />
+//     </div>
+//   );
+// };
+
+// export default Blog;
