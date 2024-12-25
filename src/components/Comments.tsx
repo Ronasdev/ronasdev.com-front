@@ -1,3 +1,23 @@
+/**
+ * Composant Comments
+ * 
+ * @description Système de gestion des commentaires avec fonctionnalités avancées
+ * 
+ * Caractéristiques principales :
+ * - Affichage hiérarchique des commentaires (commentaires principaux et réponses)
+ * - Ajout de nouveaux commentaires et réponses
+ * - Système de likes
+ * - Signalement de commentaires
+ * - Formatage dynamique des dates
+ * 
+ * @param {Object} props - Propriétés du composant
+ * @param {Comment[]} props.comments - Liste des commentaires
+ * @param {Function} props.onAddComment - Fonction d'ajout de commentaire
+ * @param {Function} props.onLikeComment - Fonction de like de commentaire
+ * @param {Function} props.onReportComment - Fonction de signalement de commentaire
+ * 
+ * @returns {JSX.Element} Interface de gestion des commentaires
+ */
 import { useState } from "react";
 import { Avatar } from "./ui/avatar";
 import { Button } from "./ui/button";
@@ -6,35 +26,39 @@ import { ThumbsUp, MessageCircle, Flag } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
+// Interface du modèle de commentaire
 interface Comment {
-  id: string;
+  id: string;                  // Identifiant unique
   author: {
-    name: string;
-    avatar: string;
+    name: string;              // Nom de l'auteur
+    avatar: string;            // URL de l'avatar
   };
-  content: string;
-  date: string;
-  likes: number;
-  isLiked: boolean;
-  replies?: Comment[];
+  content: string;             // Contenu du commentaire
+  date: string;                // Date de publication
+  likes: number;               // Nombre de likes
+  isLiked: boolean;            // État de like
+  replies?: Comment[];         // Réponses optionnelles
 }
 
+// Interface des propriétés du composant
 interface CommentsProps {
-  comments: Comment[];
-  onAddComment: (content: string, parentId?: string) => void;
-  onLikeComment: (commentId: string) => void;
-  onReportComment: (commentId: string) => void;
+  comments: Comment[];                                 // Liste des commentaires
+  onAddComment: (content: string, parentId?: string) => void;  // Ajout de commentaire
+  onLikeComment: (commentId: string) => void;         // Like de commentaire
+  onReportComment: (commentId: string) => void;       // Signalement de commentaire
 }
 
-/**
- * Composant de gestion des commentaires
- * Permet d'afficher, ajouter, répondre, liker et signaler des commentaires
- */
 const Comments = ({ comments, onAddComment, onLikeComment, onReportComment }: CommentsProps) => {
-  const [newComment, setNewComment] = useState("");
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [replyContent, setReplyContent] = useState("");
+  // États pour la gestion des commentaires
+  const [newComment, setNewComment] = useState("");     // Nouveau commentaire principal
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);  // Commentaire en cours de réponse
+  const [replyContent, setReplyContent] = useState("");  // Contenu de la réponse
 
+  /**
+   * Soumet un nouveau commentaire principal
+   * 
+   * @param {React.FormEvent} e - Événement de soumission
+   */
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (newComment.trim()) {
@@ -43,6 +67,11 @@ const Comments = ({ comments, onAddComment, onLikeComment, onReportComment }: Co
     }
   };
 
+  /**
+   * Soumet une réponse à un commentaire spécifique
+   * 
+   * @param {string} parentId - Identifiant du commentaire parent
+   */
   const handleSubmitReply = (parentId: string) => {
     if (replyContent.trim()) {
       onAddComment(replyContent, parentId);
@@ -51,10 +80,21 @@ const Comments = ({ comments, onAddComment, onLikeComment, onReportComment }: Co
     }
   };
 
+  /**
+   * Composant de rendu d'un commentaire individuel
+   * Supporte les commentaires principaux et les réponses
+   * 
+   * @param {Object} props - Propriétés du composant de commentaire
+   * @param {Comment} props.comment - Détails du commentaire
+   * @param {boolean} [props.isReply=false] - Indique si c'est une réponse
+   */
   const CommentComponent = ({ comment, isReply = false }: { comment: Comment; isReply?: boolean }) => (
     <div className={`flex space-x-4 ${isReply ? "ml-12 mt-4" : "mt-6"}`}>
+      {/* Avatar de l'auteur */}
       <Avatar src={comment.author.avatar} alt={comment.author.name} />
+      
       <div className="flex-1">
+        {/* Contenu du commentaire */}
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="font-semibold">{comment.author.name}</span>
@@ -65,7 +105,9 @@ const Comments = ({ comments, onAddComment, onLikeComment, onReportComment }: Co
           <p className="text-gray-700">{comment.content}</p>
         </div>
         
+        {/* Actions sur le commentaire */}
         <div className="flex items-center space-x-4 mt-2">
+          {/* Bouton de like */}
           <Button
             variant="ghost"
             size="sm"
@@ -75,6 +117,8 @@ const Comments = ({ comments, onAddComment, onLikeComment, onReportComment }: Co
             <ThumbsUp className="w-4 h-4 mr-1" />
             {comment.likes}
           </Button>
+
+          {/* Bouton de réponse */}
           <Button
             variant="ghost"
             size="sm"
@@ -84,6 +128,8 @@ const Comments = ({ comments, onAddComment, onLikeComment, onReportComment }: Co
             <MessageCircle className="w-4 h-4 mr-1" />
             Répondre
           </Button>
+
+          {/* Bouton de signalement */}
           <Button
             variant="ghost"
             size="sm"
@@ -95,6 +141,7 @@ const Comments = ({ comments, onAddComment, onLikeComment, onReportComment }: Co
           </Button>
         </div>
 
+        {/* Formulaire de réponse */}
         {replyingTo === comment.id && (
           <div className="mt-4">
             <Textarea
@@ -120,6 +167,7 @@ const Comments = ({ comments, onAddComment, onLikeComment, onReportComment }: Co
           </div>
         )}
 
+        {/* Réponses imbriquées */}
         {comment.replies?.map((reply) => (
           <CommentComponent key={reply.id} comment={reply} isReply />
         ))}

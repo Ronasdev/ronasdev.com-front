@@ -1,3 +1,6 @@
+// Page de Blog dynamique et interactive
+// Gère le filtrage, le tri et la pagination des articles de blog
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, Clock, ChevronRight } from "lucide-react";
@@ -12,28 +15,35 @@ import ShareButtons from "../components/ShareButtons";
 import PopularCategories from "../components/PopularCategories";
 import Pagination from "../components/Pagination";
 
-// Nombre d'articles par page
+// Nombre d'articles par page pour la pagination
 const ITEMS_PER_PAGE = 6;
 
 /**
  * Page principale du blog
- * Affiche une liste d'articles avec options de filtrage, tri et pagination
+ * Fonctionnalités:
+ * - Filtrage par catégories
+ * - Recherche par titre/extrait
+ * - Tri par date
+ * - Pagination
+ * - Modes d'affichage (grille/liste)
+ * 
+ * @returns {JSX.Element} Page de blog complète
  */
 const Blog = () => {
-  // États locaux
+  // États de chargement et de pagination
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   
-  // Préférences d'affichage
+  // Hook personnalisé pour gérer les préférences de vue
   const { 
-    viewMode, 
-    selectedCategories, 
-    sortOrder, 
-    searchQuery, 
-    setViewMode, 
-    setSelectedCategories, 
-    setSortOrder, 
-    setSearchQuery 
+    viewMode,           // Mode d'affichage (grille/liste)
+    selectedCategories, // Catégories sélectionnées
+    sortOrder,          // Ordre de tri (plus récent/plus ancien)
+    searchQuery,        // Requête de recherche
+    setViewMode,        // Fonction pour changer le mode de vue
+    setSelectedCategories, // Fonction pour mettre à jour les catégories
+    setSortOrder,       // Fonction pour changer l'ordre de tri
+    setSearchQuery      // Fonction pour mettre à jour la recherche
   } = useViewPreferences("blog");
 
   // Réinitialise la page courante lors du changement des filtres
@@ -41,7 +51,7 @@ const Blog = () => {
     setCurrentPage(1);
   }, [selectedCategories, searchQuery, sortOrder]);
 
-  // Simulation du chargement
+  // Simulation de chargement initial
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -52,6 +62,7 @@ const Blog = () => {
   // Calcul des catégories populaires
   const popularCategories = Array.from(
     blogPosts.reduce((acc, post) => {
+      // Compte le nombre d'occurrences de chaque catégorie
       post.categories.forEach(category => {
         acc.set(category, (acc.get(category) || 0) + 1);
       });
@@ -61,24 +72,29 @@ const Blog = () => {
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
 
-  // Filtrage des articles
+  // Filtrage et tri des articles
   const filteredPosts = blogPosts
     .filter(post => {
+      // Filtre par catégories
       const matchesCategories = selectedCategories.length === 0 || 
         post.categories.some(cat => selectedCategories.includes(cat));
+      
+      // Filtre par requête de recherche
       const matchesSearch = searchQuery === "" || 
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+      
       return matchesCategories && matchesSearch;
     })
     .sort((a, b) => {
+      // Tri par date (plus récent/plus ancien)
       if (sortOrder === "newest") {
         return new Date(b.date).getTime() - new Date(a.date).getTime();
       }
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
-  // Pagination
+  // Gestion de la pagination
   const totalPages = Math.ceil(filteredPosts.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedPosts = filteredPosts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -93,10 +109,11 @@ const Blog = () => {
   };
 
   return (
+    // Conteneur principal avec dégradé de fond
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <Navbar />
       <main className="container mx-auto px-4 py-20">
-        {/* En-tête */}
+        {/* En-tête animé */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -111,7 +128,7 @@ const Blog = () => {
           </p>
         </motion.div>
 
-        {/* Barre de filtrage */}
+        {/* Barre de filtrage et de recherche */}
         <BlogFilterBar
           selectedCategories={selectedCategories}
           onCategoryChange={setSelectedCategories}
@@ -123,13 +140,16 @@ const Blog = () => {
           onSearchQueryChange={setSearchQuery}
         />
 
+        {/* Conteneur principal avec disposition responsive */}
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Liste des articles */}
+          {/* Section des articles */}
           <div className="lg:col-span-3">
+            {/* États de chargement ou liste d'articles */}
             {isLoading ? (
               <GridSkeleton count={6} />
             ) : (
               <>
+                {/* Conteneur de la grille d'articles avec animations */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -140,6 +160,7 @@ const Blog = () => {
                       : "grid-cols-1 gap-4"
                   }`}
                 >
+                  {/* Mapping des articles avec animations individuelles */}
                   {paginatedPosts.map((post, index) => (
                     <motion.article
                       key={post.slug}
@@ -148,16 +169,20 @@ const Blog = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: index * 0.1 }}
                     >
+                      {/* Image de couverture */}
                       <img
                         src={post.image}
                         alt={post.title}
                         className="w-full h-48 object-cover"
                       />
                       <div className="p-6">
+                        {/* Métadonnées de l'article */}
                         <div className="flex items-center space-x-4 text-sm text-secondary-light mb-4">
+                          {/* Catégorie principale */}
                           <span className="bg-primary/10 text-primary px-3 py-1 rounded-full">
                             {post.categories[0]}
                           </span>
+                          {/* Date de publication */}
                           <div className="flex items-center">
                             <Calendar className="w-4 h-4 mr-1" />
                             {new Date(post.date).toLocaleDateString('fr-FR', {
@@ -166,18 +191,23 @@ const Blog = () => {
                               day: 'numeric'
                             })}
                           </div>
+                          {/* Temps de lecture */}
                           <div className="flex items-center">
                             <Clock className="w-4 h-4 mr-1" />
                             {post.readTime || '5 min'}
                           </div>
                         </div>
+                        {/* Titre de l'article */}
                         <h2 className="text-xl font-semibold text-secondary-dark mb-2">
                           {post.title}
                         </h2>
+                        {/* Extrait de l'article */}
                         <p className="text-secondary-light mb-4">
                           {post.excerpt}
                         </p>
+                        {/* Actions de l'article */}
                         <div className="flex items-center justify-between">
+                          {/* Lien vers l'article complet */}
                           <Link
                             to={`/blog/${post.slug}`}
                             className="inline-flex items-center text-primary hover:text-primary-dark transition-colors"
@@ -185,6 +215,7 @@ const Blog = () => {
                             Lire la suite
                             <ChevronRight className="w-4 h-4 ml-1" />
                           </Link>
+                          {/* Boutons de partage */}
                           <ShareButtons
                             url={`${window.location.origin}/blog/${post.slug}`}
                             title={post.title}
@@ -205,23 +236,12 @@ const Blog = () => {
                     />
                   </div>
                 )}
-
-                {/* Message si aucun article */}
-                {filteredPosts.length === 0 && (
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center text-secondary-light py-8"
-                  >
-                    Aucun article ne correspond à vos critères de recherche.
-                  </motion.p>
-                )}
               </>
             )}
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
+          {/* Sidebar avec catégories populaires */}
+          <div className="hidden lg:block">
             <PopularCategories
               categories={popularCategories}
               selectedCategories={selectedCategories}

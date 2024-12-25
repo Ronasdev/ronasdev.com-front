@@ -1,3 +1,26 @@
+/**
+ * Composant ArticleDialog
+ * 
+ * @description Boîte de dialogue pour la création et l'édition d'articles
+ * 
+ * Caractéristiques principales :
+ * - Formulaire dynamique pour créer ou modifier un article
+ * - Gestion des états de formulaire
+ * - Validation et soumission des données
+ * - Notifications toast pour le retour utilisateur
+ * 
+ * @param {Object} props - Propriétés du composant
+ * @param {boolean} props.open - État d'ouverture de la boîte de dialogue
+ * @param {Function} props.onOpenChange - Fonction de changement d'état de la boîte de dialogue
+ * @param {Object} [props.article] - Article à éditer (optionnel)
+ * @param {string} [props.article.id] - Identifiant de l'article
+ * @param {string} props.article.title - Titre de l'article
+ * @param {string} props.article.content - Contenu de l'article
+ * @param {string} props.article.category - Catégorie de l'article
+ * @param {"published" | "draft"} props.article.status - Statut de l'article
+ * 
+ * @returns {JSX.Element} Boîte de dialogue pour la gestion des articles
+ */
 import { useState } from "react";
 import {
   Dialog,
@@ -20,15 +43,16 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 
+// Interface des propriétés du composant
 interface ArticleDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  article?: {
-    id?: string;
-    title: string;
-    content: string;
-    category: string;
-    status: "published" | "draft";
+  open: boolean;                  // État d'ouverture de la boîte de dialogue
+  onOpenChange: (open: boolean) => void;  // Fonction de changement d'état
+  article?: {                     // Article optionnel à éditer
+    id?: string;                  // Identifiant de l'article
+    title: string;                // Titre de l'article
+    content: string;              // Contenu de l'article
+    category: string;             // Catégorie de l'article
+    status: "published" | "draft";// Statut de l'article
   };
 }
 
@@ -37,8 +61,11 @@ export function ArticleDialog({
   onOpenChange,
   article,
 }: ArticleDialogProps) {
+  // Détermine si le composant est en mode édition
   const isEditing = !!article;
   const { toast } = useToast();
+
+  // État du formulaire avec valeurs par défaut
   const [formData, setFormData] = useState({
     title: article?.title || "",
     content: article?.content || "",
@@ -46,10 +73,15 @@ export function ArticleDialog({
     status: article?.status || "draft",
   });
 
+  /**
+   * Gère la soumission du formulaire
+   * 
+   * @param {React.FormEvent} e - Événement de soumission du formulaire
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Ici, vous ajouteriez l'appel API pour créer/modifier l'article
+      // Appel API pour créer ou modifier l'article
       const response = await fetch("/api/articles", {
         method: isEditing ? "PUT" : "POST",
         headers: {
@@ -63,6 +95,7 @@ export function ArticleDialog({
 
       if (!response.ok) throw new Error("Erreur lors de la sauvegarde");
 
+      // Notification de succès
       toast({
         title: isEditing ? "Article modifié" : "Article créé",
         description: isEditing
@@ -71,6 +104,7 @@ export function ArticleDialog({
       });
       onOpenChange(false);
     } catch (error) {
+      // Notification d'erreur
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la sauvegarde.",
@@ -83,16 +117,21 @@ export function ArticleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
+          {/* Titre dynamique selon le mode */}
           <DialogTitle>
             {isEditing ? "Modifier l'article" : "Nouvel article"}
           </DialogTitle>
+          {/* Description dynamique selon le mode */}
           <DialogDescription>
             {isEditing
               ? "Modifiez les informations de l'article ici."
               : "Créez un nouvel article en remplissant les informations ci-dessous."}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Formulaire de saisie des informations de l'article */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Champ de titre */}
           <div className="space-y-2">
             <Label htmlFor="title">Titre</Label>
             <Input
@@ -104,6 +143,8 @@ export function ArticleDialog({
               placeholder="Titre de l'article"
             />
           </div>
+
+          {/* Champ de contenu */}
           <div className="space-y-2">
             <Label htmlFor="content">Contenu</Label>
             <Textarea
@@ -116,7 +157,10 @@ export function ArticleDialog({
               className="h-32"
             />
           </div>
+
+          {/* Grille de sélection de catégorie et statut */}
           <div className="grid grid-cols-2 gap-4">
+            {/* Sélecteur de catégorie */}
             <div className="space-y-2">
               <Label htmlFor="category">Catégorie</Label>
               <Select
@@ -135,6 +179,8 @@ export function ArticleDialog({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Sélecteur de statut */}
             <div className="space-y-2">
               <Label htmlFor="status">Statut</Label>
               <Select
@@ -153,7 +199,10 @@ export function ArticleDialog({
               </Select>
             </div>
           </div>
+
+          {/* Boutons de pied de page */}
           <DialogFooter>
+            {/* Bouton d'annulation */}
             <Button
               type="button"
               variant="outline"
@@ -161,6 +210,7 @@ export function ArticleDialog({
             >
               Annuler
             </Button>
+            {/* Bouton de soumission dynamique */}
             <Button type="submit">
               {isEditing ? "Modifier" : "Créer"}
             </Button>

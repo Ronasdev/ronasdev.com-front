@@ -1,41 +1,62 @@
+// Configuration Tailwind CSS pour le projet
+// Définit le système de design, les thèmes et les extensions
+
 import type { Config } from "tailwindcss";
 
 export default {
+  // Active le mode sombre via une classe
   darkMode: ["class"],
+
+  // Chemins des fichiers à analyser pour générer les classes CSS
   content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
+    "./pages/**/*.{ts,tsx}",     // Pages
+    "./components/**/*.{ts,tsx}", // Composants
+    "./app/**/*.{ts,tsx}",        // Fichiers d'application
+    "./src/**/*.{ts,tsx}",        // Tous les fichiers source
   ],
+
+  // Préfixe optionnel pour les classes (ici vide)
   prefix: "",
+
+  // Configuration du thème personnalisé
   theme: {
+    // Configuration du conteneur (centré avec padding)
     container: {
       center: true,
       padding: "2rem",
       screens: {
-        "2xl": "1400px",
+        "2xl": "1400px", // Largeur maximale
       },
     },
+
+    // Extensions et personnalisations du thème
     extend: {
+      // Palette de couleurs personnalisée
       colors: {
+        // Couleurs système avec support HSL
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+
+        // Couleur primaire personnalisée (vert émeraude)
         primary: {
-          DEFAULT: "#10B981",
-          light: "#34D399",
-          dark: "#059669",
+          DEFAULT: "#10B981",  // Couleur principale
+          light: "#34D399",    // Variante claire
+          dark: "#059669",     // Variante sombre
           foreground: "hsl(var(--primary-foreground))",
         },
+
+        // Couleur secondaire personnalisée (gris foncé)
         secondary: {
           DEFAULT: "#1F2937",
           light: "#374151",
           dark: "#111827",
           foreground: "hsl(var(--secondary-foreground))",
         },
+
+        // Autres couleurs système
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
@@ -49,6 +70,7 @@ export default {
           foreground: "hsl(var(--accent-foreground))",
         },
       },
+      // Autres extensions possibles : bordures, animations, etc.
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -80,5 +102,7 @@ export default {
       },
     },
   },
+
+  // Plugins Tailwind (à ajouter si nécessaire)
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;

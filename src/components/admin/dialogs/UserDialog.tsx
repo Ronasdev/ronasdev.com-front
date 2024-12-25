@@ -1,3 +1,27 @@
+/**
+ * Composant UserDialog
+ * 
+ * @description Boîte de dialogue pour la création et l'édition d'utilisateurs
+ * 
+ * Caractéristiques principales :
+ * - Formulaire dynamique pour créer ou modifier un utilisateur
+ * - Validation des mots de passe
+ * - Gestion des états de formulaire
+ * - Sélection de rôle et statut
+ * - Notifications toast pour le retour utilisateur
+ * 
+ * @param {Object} props - Propriétés du composant
+ * @param {boolean} props.open - État d'ouverture de la boîte de dialogue
+ * @param {Function} props.onOpenChange - Fonction de changement d'état de la boîte de dialogue
+ * @param {Object} [props.user] - Utilisateur à éditer (optionnel)
+ * @param {string} [props.user.id] - Identifiant de l'utilisateur
+ * @param {string} props.user.name - Nom de l'utilisateur
+ * @param {string} props.user.email - Email de l'utilisateur
+ * @param {"admin" | "editor" | "user"} props.user.role - Rôle de l'utilisateur
+ * @param {"active" | "inactive"} props.user.status - Statut de l'utilisateur
+ * 
+ * @returns {JSX.Element} Boîte de dialogue pour la gestion des utilisateurs
+ */
 import { useState } from "react";
 import {
   Dialog,
@@ -19,21 +43,25 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 
+// Interface des propriétés du composant
 interface UserDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  user?: {
-    id?: string;
-    name: string;
-    email: string;
-    role: "admin" | "editor" | "user";
-    status: "active" | "inactive";
+  open: boolean;                  // État d'ouverture de la boîte de dialogue
+  onOpenChange: (open: boolean) => void;  // Fonction de changement d'état
+  user?: {                        // Utilisateur optionnel à éditer
+    id?: string;                  // Identifiant de l'utilisateur
+    name: string;                 // Nom de l'utilisateur
+    email: string;                // Email de l'utilisateur
+    role: "admin" | "editor" | "user";  // Rôle de l'utilisateur
+    status: "active" | "inactive";  // Statut de l'utilisateur
   };
 }
 
 export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
+  // Détermine si le composant est en mode édition
   const isEditing = !!user;
   const { toast } = useToast();
+
+  // État du formulaire avec valeurs par défaut
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
@@ -43,9 +71,15 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     confirmPassword: "",
   });
 
+  /**
+   * Gère la soumission du formulaire
+   * 
+   * @param {React.FormEvent} e - Événement de soumission du formulaire
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validation des mots de passe lors de la création
     if (!isEditing && formData.password !== formData.confirmPassword) {
       toast({
         title: "Erreur",
@@ -56,7 +90,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     }
 
     try {
-      // Ici, vous ajouteriez l'appel API pour créer/modifier l'utilisateur
+      // Appel API pour créer ou modifier l'utilisateur
       const response = await fetch("/api/users", {
         method: isEditing ? "PUT" : "POST",
         headers: {
@@ -70,6 +104,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
 
       if (!response.ok) throw new Error("Erreur lors de la sauvegarde");
 
+      // Notification de succès
       toast({
         title: isEditing ? "Utilisateur modifié" : "Utilisateur créé",
         description: isEditing
@@ -78,6 +113,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
       });
       onOpenChange(false);
     } catch (error) {
+      // Notification d'erreur
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la sauvegarde.",
@@ -89,17 +125,23 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
+        {/* En-tête de la boîte de dialogue */}
         <DialogHeader>
+          {/* Titre dynamique selon le mode */}
           <DialogTitle>
             {isEditing ? "Modifier l'utilisateur" : "Nouvel utilisateur"}
           </DialogTitle>
+          {/* Description dynamique selon le mode */}
           <DialogDescription>
             {isEditing
               ? "Modifiez les informations de l'utilisateur ici."
               : "Créez un nouvel utilisateur en remplissant les informations ci-dessous."}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Formulaire de saisie des informations de l'utilisateur */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Champ de nom */}
           <div className="space-y-2">
             <Label htmlFor="name">Nom</Label>
             <Input
@@ -111,6 +153,8 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
               placeholder="Nom complet"
             />
           </div>
+
+          {/* Champ d'email */}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -123,6 +167,8 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
               placeholder="email@example.com"
             />
           </div>
+
+          {/* Champs de mot de passe uniquement pour la création */}
           {!isEditing && (
             <>
               <div className="space-y-2">
@@ -151,6 +197,8 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
               </div>
             </>
           )}
+
+          {/* Sélecteur de rôle */}
           <div className="space-y-2">
             <Label htmlFor="role">Rôle</Label>
             <Select
@@ -169,6 +217,8 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Sélecteur de statut */}
           <div className="space-y-2">
             <Label htmlFor="status">Statut</Label>
             <Select
@@ -186,7 +236,10 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Boutons de pied de page */}
           <DialogFooter>
+            {/* Bouton d'annulation */}
             <Button
               type="button"
               variant="outline"
@@ -194,6 +247,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
             >
               Annuler
             </Button>
+            {/* Bouton de soumission dynamique */}
             <Button type="submit">
               {isEditing ? "Modifier" : "Créer"}
             </Button>

@@ -1,3 +1,6 @@
+// Page de détail d'article de blog
+// Gère l'affichage complet d'un article, ses commentaires et contenus associés
+
 import { useParams, Navigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -11,17 +14,26 @@ import { blogPosts, getRelatedPosts } from "../data/blogPosts";
 
 /**
  * Page de détail d'un article de blog
- * Affiche le contenu complet de l'article avec système de commentaires
+ * Fonctionnalités:
+ * - Affichage du contenu complet de l'article
+ * - Système de commentaires interactif
+ * - Gestion des états de chargement
+ * - Redirection si l'article n'existe pas
+ * 
+ * @returns {JSX.Element} Page de détail d'article
  */
 const BlogPost = () => {
+  // Récupération du slug depuis l'URL
   const { slug } = useParams<{ slug: string }>();
+  
+  // État de chargement
   const [isLoading, setIsLoading] = useState(true);
 
-  // Récupération de l'article
+  // Récupération de l'article et des articles connexes
   const post = blogPosts.find((post) => post.slug === slug);
   const relatedPosts = slug ? getRelatedPosts(slug, 3) : [];
 
-  // Simulation d'un chargement
+  // Simulation de chargement
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -29,7 +41,7 @@ const BlogPost = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // État pour les commentaires
+  // État initial des commentaires
   const [comments, setComments] = useState([
     {
       id: "1",
@@ -62,7 +74,7 @@ const BlogPost = () => {
     return <Navigate to="/404" />;
   }
 
-  // Affichage d'un skeleton loader pendant le chargement
+  // Skeleton loader pendant le chargement
   if (isLoading || !post) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -84,6 +96,11 @@ const BlogPost = () => {
     );
   }
 
+  /**
+   * Ajoute un nouveau commentaire
+   * @param content Contenu du commentaire
+   * @param parentId ID du commentaire parent (pour les réponses)
+   */
   const handleAddComment = (content: string, parentId?: string) => {
     const newComment = {
       id: Date.now().toString(),
@@ -98,6 +115,7 @@ const BlogPost = () => {
     };
 
     if (parentId) {
+      // Ajout d'une réponse à un commentaire existant
       setComments(comments.map(comment => {
         if (comment.id === parentId) {
           return {
@@ -108,12 +126,18 @@ const BlogPost = () => {
         return comment;
       }));
     } else {
+      // Ajout d'un nouveau commentaire principal
       setComments([...comments, newComment]);
     }
   };
 
+  /**
+   * Gère l'action de like/unlike sur un commentaire
+   * @param commentId ID du commentaire à liker
+   */
   const handleLikeComment = (commentId: string) => {
     setComments(comments.map(comment => {
+      // Vérifie et met à jour le commentaire principal
       if (comment.id === commentId) {
         return {
           ...comment,
@@ -121,6 +145,7 @@ const BlogPost = () => {
           isLiked: !comment.isLiked,
         };
       }
+      // Vérifie et met à jour les réponses aux commentaires
       if (comment.replies) {
         return {
           ...comment,
@@ -140,25 +165,32 @@ const BlogPost = () => {
     }));
   };
 
+  /**
+   * Signale un commentaire inapproprié
+   * @param commentId ID du commentaire à signaler
+   */
   const handleReportComment = (commentId: string) => {
     // Implémentation du signalement
     console.log("Commentaire signalé:", commentId);
   };
 
   return (
+    // Conteneur principal avec dégradé de fond
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <Navbar />
       <article className="pt-20 pb-12">
-        {/* En-tête de l'article */}
+        {/* En-tête de l'article avec image de couverture */}
         <div className="relative h-96 mb-8">
           <img
             src={post.image}
             alt={post.title}
             className="w-full h-full object-cover"
           />
+          {/* Superposition sombre pour améliorer la lisibilité du titre */}
           <div className="absolute inset-0 bg-black bg-opacity-40" />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center text-white px-4">
+              {/* Titre animé */}
               <motion.h1
                 className="text-4xl md:text-5xl font-bold mb-4"
                 initial={{ opacity: 0, y: 20 }}
@@ -174,6 +206,7 @@ const BlogPost = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           {/* Métadonnées de l'article */}
           <div className="flex flex-wrap items-center justify-between mb-8">
+            {/* Informations de l'auteur */}
             <div className="flex items-center space-x-4">
               <img
                 src={post.author.avatar}
@@ -185,6 +218,7 @@ const BlogPost = () => {
                 <div className="text-sm text-gray-500">{post.excerpt}</div>
               </div>
             </div>
+            {/* Informations de lecture */}
             <div className="flex items-center space-x-4 text-sm text-gray-500 mt-4 sm:mt-0">
               <span className="flex items-center">
                 <Calendar className="w-4 h-4 mr-1" />
@@ -197,56 +231,52 @@ const BlogPost = () => {
             </div>
           </div>
 
+          {/* Disposition flexible du contenu */}
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Contenu principal */}
-            <div className="lg:w-2/3">
-              {/* Catégories et partage */}
-              <div className="flex flex-wrap items-center justify-between mb-8">
+            <div className="lg:w-3/4">
+              {/* Contenu de l'article */}
+              <div 
+                className="prose lg:prose-xl max-w-none"
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
+
+              {/* Boutons de partage */}
+              <div className="mt-8">
+                <ShareButtons
+                  url={`${window.location.origin}/blog/${post.slug}`}
+                  title={post.title}
+                />
+              </div>
+
+              {/* Section des commentaires */}
+              <Comments
+                comments={comments}
+                onAddComment={handleAddComment}
+                onLikeComment={handleLikeComment}
+                onReportComment={handleReportComment}
+              />
+            </div>
+
+            {/* Sidebar */}
+            <div className="lg:w-1/4">
+              {/* Catégories */}
+              <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+                <h3 className="text-xl font-semibold mb-4">Catégories</h3>
                 <div className="flex flex-wrap gap-2">
-                  {post.categories.map((category) => (
+                  {post.categories.map(category => (
                     <span
                       key={category}
-                      className="flex items-center px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                      className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
                     >
-                      <Tag className="w-4 h-4 mr-1" />
                       {category}
                     </span>
                   ))}
                 </div>
-                <ShareButtons
-                  title={post.title}
-                  url={window.location.href}
-                />
               </div>
 
-              {/* Contenu de l'article */}
-              <motion.div
-                className="prose prose-lg max-w-none mb-12"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <p>{post.excerpt}</p>
-                {/* Ajoutez ici le contenu complet de l'article */}
-              </motion.div>
-
-              {/* Section commentaires */}
-              <div className="mt-12 pt-8 border-t">
-                <Comments
-                  comments={comments}
-                  onAddComment={handleAddComment}
-                  onLikeComment={handleLikeComment}
-                  onReportComment={handleReportComment}
-                />
-              </div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="lg:w-1/3">
-              <div className="sticky top-24 space-y-8">
-                {/* Articles liés */}
-                <RelatedPosts posts={relatedPosts} />
-              </div>
+              {/* Articles connexes */}
+              <RelatedPosts posts={relatedPosts} />
             </div>
           </div>
         </div>

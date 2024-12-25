@@ -1,19 +1,32 @@
+// Composant de navigation principal
+// Gère la navigation desktop et mobile avec des liens et des interactions dynamiques
+
 import { useState, useEffect } from "react";
 import { Menu, X, Youtube, Facebook, Github, Home, Briefcase, FolderKanban, GraduationCap, BookOpen, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ModeToggle } from "@/components/ui/mode-toggle"; // Ajout du bouton de thème
 
+/**
+ * Composant de barre de navigation
+ * Fournit une navigation responsive avec des liens et des interactions
+ * @returns Composant de navigation
+ */
 const Navbar = () => {
+  // États pour gérer l'ouverture du menu mobile et le défilement
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
+  // Effet pour détecter le défilement et ajuster le style de la navbar
   useEffect(() => {
     const handleScroll = () => {
+      // Change l'état si la page a défilé de plus de 20 pixels
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Configuration des liens de navigation
   const navLinks = [
     { name: "Accueil", path: "/", icon: <Home className="w-5 h-5" /> },
     { name: "Services", path: "/services", icon: <Briefcase className="w-5 h-5" /> },
@@ -23,6 +36,7 @@ const Navbar = () => {
     { name: "Contact", path: "/contact", icon: <Mail className="w-5 h-5" /> },
   ];
 
+  // Configuration des liens sociaux
   const socialLinks = [
     { 
       icon: <Youtube className="w-5 h-5" />, 
@@ -42,18 +56,20 @@ const Navbar = () => {
   ];
 
   return (
+    // Navbar avec effet de transparence et de flou lors du défilement
     <nav className={`fixed w-full z-50 transition-all duration-300 ${
       isScrolled ? "bg-white/80 backdrop-blur-md shadow-lg" : "bg-transparent"
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+          {/* Logo/Titre */}
           <div className="flex-shrink-0">
             <Link to="/" className="text-2xl font-bold text-primary-dark">
               Ronasdev
             </Link>
           </div>
           
-          {/* Desktop Menu */}
+          {/* Menu Desktop */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-center space-x-8">
               {navLinks.map((link) => (
@@ -69,49 +85,10 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Social Links */}
+          {/* Conteneur pour les liens sociaux et le bouton de thème */}
           <div className="hidden md:flex items-center space-x-4">
-            {socialLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-secondary-light hover:text-primary transition-colors"
-                aria-label={link.name}
-              >
-                {link.icon}
-              </a>
-            ))}
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="text-secondary-light hover:text-primary transition-colors"
-              aria-label="Toggle menu"
-            >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile menu */}
-        <div className={`md:hidden ${isOpen ? "block" : "hidden"}`}>
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                to={link.path}
-                className="flex items-center space-x-2 px-3 py-2 text-secondary-light hover:text-primary transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                {link.icon}
-                <span>{link.name}</span>
-              </Link>
-            ))}
-            <div className="flex space-x-4 px-3 py-2">
+            {/* Liens sociaux */}
+            <div className="flex space-x-4 mr-4">
               {socialLinks.map((link) => (
                 <a
                   key={link.name}
@@ -124,6 +101,56 @@ const Navbar = () => {
                   {link.icon}
                 </a>
               ))}
+            </div>
+
+            {/* Bouton de changement de thème */}
+            <ModeToggle />
+          </div>
+
+          {/* Bouton menu mobile */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-secondary-light hover:text-primary transition-colors"
+              aria-label="Toggle menu"
+            >
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Menu mobile */}
+        <div className={`md:hidden ${isOpen ? "block" : "hidden"}`}>
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            {/* Liens de navigation */}
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                to={link.path}
+                className="flex items-center space-x-2 px-3 py-2 text-secondary-light hover:text-primary transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                {link.icon}
+                <span>{link.name}</span>
+              </Link>
+            ))}
+            {/* Liens sociaux et bouton de thème */}
+            <div className="flex items-center justify-between px-3 py-2">
+              <div className="flex space-x-4">
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.name}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-secondary-light hover:text-primary transition-colors"
+                    aria-label={link.name}
+                  >
+                    {link.icon}
+                  </a>
+                ))}
+              </div>
+              <ModeToggle />
             </div>
           </div>
         </div>

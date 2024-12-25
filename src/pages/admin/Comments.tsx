@@ -1,3 +1,6 @@
+// Page de gestion des commentaires pour l'administration
+// Permet de filtrer, visualiser et gérer les commentaires des articles et formations
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -46,25 +49,28 @@ import { useToast } from "@/components/ui/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CommentContextDialog } from "@/components/admin/dialogs/CommentContextDialog";
 
-// Types
+/**
+ * Interface représentant un commentaire
+ * Contient toutes les informations nécessaires pour la gestion des commentaires
+ */
 interface Comment {
-  id: string;
-  content: string;
+  id: string;                   // Identifiant unique du commentaire
+  content: string;              // Contenu du commentaire
   author: {
-    name: string;
-    avatar?: string;
+    name: string;               // Nom de l'auteur
+    avatar?: string;            // Avatar de l'auteur (optionnel)
   };
   post: {
-    title: string;
-    type: "article" | "formation";
+    title: string;              // Titre de l'article ou de la formation
+    type: "article" | "formation"; // Type de contenu
   };
-  status: "approved" | "pending" | "spam";
-  date: string;
-  likes: number;
-  reports: number;
+  status: "approved" | "pending" | "spam"; // Statut du commentaire
+  date: string;                 // Date de publication
+  likes: number;                // Nombre de likes
+  reports: number;              // Nombre de signalements
 }
 
-// Données simulées
+// Données simulées pour le développement et les tests
 const comments: Comment[] = [
   {
     id: "1",
@@ -101,16 +107,31 @@ const comments: Comment[] = [
   // Ajoutez plus de commentaires ici
 ];
 
+/**
+ * Composant de gestion des commentaires pour l'administration
+ * Permet de :
+ * - Filtrer les commentaires
+ * - Visualiser les détails des commentaires
+ * - Gérer le statut des commentaires
+ * 
+ * @returns {JSX.Element} Page de gestion des commentaires
+ */
 const Comments = () => {
+  // États pour la gestion des filtres et des interactions
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
   const [contextDialogOpen, setContextDialogOpen] = useState(false);
+
+  // Hook de notification pour les actions
   const { toast } = useToast();
 
-  // Filtrage des commentaires
+  /**
+   * Filtre les commentaires en fonction des critères de recherche
+   * @returns {Comment[]} Liste des commentaires filtrés
+   */
   const filteredComments = comments.filter((comment) => {
     const matchesSearch =
       comment.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -124,7 +145,10 @@ const Comments = () => {
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  // Gestion de la suppression
+  /**
+   * Gère la suppression d'un commentaire
+   * Affiche une notification de succès
+   */
   const handleDelete = () => {
     if (selectedComment) {
       toast({
@@ -136,9 +160,22 @@ const Comments = () => {
     }
   };
 
+  /**
+   * Change le statut d'un commentaire
+   * @param status Nouveau statut du commentaire
+   */
+  const handleChangeStatus = (status: Comment['status']) => {
+    if (selectedComment) {
+      toast({
+        title: "Statut mis à jour",
+        description: `Le commentaire a été marqué comme ${status}.`,
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* En-tête */}
+      {/* En-tête de la page */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Commentaires</h1>
         <p className="text-muted-foreground">
@@ -146,8 +183,9 @@ const Comments = () => {
         </p>
       </div>
 
-      {/* Filtres */}
+      {/* Section de filtrage et recherche */}
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-x-4 md:space-y-0">
+        {/* Barre de recherche */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -157,7 +195,10 @@ const Comments = () => {
             className="pl-10"
           />
         </div>
+
+        {/* Filtres de statut et type */}
         <div className="flex items-center space-x-4">
+          {/* Filtre par statut */}
           <Select value={selectedStatus} onValueChange={setSelectedStatus}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Statut" />
@@ -169,6 +210,8 @@ const Comments = () => {
               <SelectItem value="spam">Spam</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Filtre par type de contenu */}
           <Select value={selectedType} onValueChange={setSelectedType}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Type" />
@@ -182,7 +225,7 @@ const Comments = () => {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Tableau des commentaires */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -198,38 +241,35 @@ const Comments = () => {
           <TableBody>
             {filteredComments.map((comment) => (
               <TableRow key={comment.id}>
-                <TableCell>
-                  <div className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarImage
-                        src={comment.author.avatar}
-                        alt={comment.author.name}
-                      />
-                      <AvatarFallback>
-                        {comment.author.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">{comment.author.name}</div>
-                      <div className="text-sm text-muted-foreground line-clamp-2">
-                        {comment.content}
-                      </div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
+                {/* Colonne du commentaire avec avatar et contenu */}
+                <TableCell className="flex items-center space-x-4">
+                  <Avatar>
+                    <AvatarImage src={comment.author.avatar} />
+                    <AvatarFallback>
+                      {comment.author.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
-                    <div className="font-medium">{comment.post.title}</div>
-                    <Badge variant="outline">
-                      {comment.post.type === "article"
-                        ? "Article"
-                        : "Formation"}
-                    </Badge>
+                    <div className="font-medium">{comment.author.name}</div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {comment.content}
+                    </p>
                   </div>
                 </TableCell>
+
+                {/* Colonne du contenu associé */}
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    {comment.post.type === "article" ? (
+                      <MessageSquare className="h-4 w-4 text-primary" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-primary" />
+                    )}
+                    <span>{comment.post.title}</span>
+                  </div>
+                </TableCell>
+
+                {/* Colonne de statut */}
                 <TableCell>
                   <Badge
                     variant={
@@ -247,25 +287,25 @@ const Comments = () => {
                       : "Spam"}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  {new Date(comment.date).toLocaleDateString("fr-FR")}
-                </TableCell>
+
+                {/* Colonne de date */}
+                <TableCell>{comment.date}</TableCell>
+
+                {/* Colonne d'interactions */}
                 <TableCell>
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-1">
                       <ThumbsUp className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{comment.likes}</span>
+                      <span>{comment.likes}</span>
                     </div>
-                    {comment.reports > 0 && (
-                      <div className="flex items-center space-x-1">
-                        <Flag className="h-4 w-4 text-destructive" />
-                        <span className="text-sm text-destructive">
-                          {comment.reports}
-                        </span>
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-1">
+                      <Flag className="h-4 w-4 text-destructive" />
+                      <span>{comment.reports}</span>
+                    </div>
                   </div>
                 </TableCell>
+
+                {/* Colonne d'actions */}
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -274,8 +314,9 @@ const Comments = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {/* Actions sur le commentaire */}
                       <DropdownMenuItem
-                        onClick={() => {
+                        onSelect={() => {
                           setSelectedComment(comment);
                           setContextDialogOpen(true);
                         }}
@@ -283,16 +324,28 @@ const Comments = () => {
                         <Eye className="mr-2 h-4 w-4" />
                         Voir le contexte
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Modifier
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          handleChangeStatus(
+                            comment.status === "approved" ? "spam" : "approved"
+                          );
+                        }}
+                      >
+                        {comment.status === "approved" ? (
+                          <Flag className="mr-2 h-4 w-4" />
+                        ) : (
+                          <ThumbsUp className="mr-2 h-4 w-4" />
+                        )}
+                        {comment.status === "approved"
+                          ? "Marquer comme spam"
+                          : "Approuver"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => {
+                        onSelect={() => {
                           setSelectedComment(comment);
                           setDeleteDialogOpen(true);
                         }}
+                        className="text-destructive"
                       >
                         <Trash className="mr-2 h-4 w-4" />
                         Supprimer
@@ -306,20 +359,11 @@ const Comments = () => {
         </Table>
       </div>
 
-      {/* Comment Context Dialog */}
-      {selectedComment && (
-        <CommentContextDialog
-          open={contextDialogOpen}
-          onOpenChange={setContextDialogOpen}
-          comment={selectedComment}
-        />
-      )}
-
-      {/* Dialog de confirmation de suppression */}
+      {/* Dialogue de confirmation de suppression */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogTitle>Supprimer le commentaire</DialogTitle>
             <DialogDescription>
               Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action
               est irréversible.
@@ -332,15 +376,21 @@ const Comments = () => {
             >
               Annuler
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-            >
+            <Button variant="destructive" onClick={handleDelete}>
               Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialogue de contexte du commentaire */}
+      {selectedComment && (
+        <CommentContextDialog
+          open={contextDialogOpen}
+          onOpenChange={setContextDialogOpen}
+          comment={selectedComment}
+        />
+      )}
     </div>
   );
 };

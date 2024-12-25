@@ -1,3 +1,31 @@
+/**
+ * Composant FormationDialog
+ * 
+ * @description Boîte de dialogue pour la création et l'édition de formations
+ * 
+ * Caractéristiques principales :
+ * - Formulaire dynamique pour créer ou modifier une formation
+ * - Gestion des états de formulaire
+ * - Validation et soumission des données
+ * - Notifications toast pour le retour utilisateur
+ * 
+ * @param {Object} props - Propriétés du composant
+ * @param {boolean} props.open - État d'ouverture de la boîte de dialogue
+ * @param {Function} props.onOpenChange - Fonction de changement d'état de la boîte de dialogue
+ * @param {Object} [props.formation] - Formation à éditer (optionnel)
+ * @param {string} [props.formation.id] - Identifiant de la formation
+ * @param {string} props.formation.title - Titre de la formation
+ * @param {string} props.formation.description - Description de la formation
+ * @param {number} props.formation.price - Prix de la formation
+ * @param {string} props.formation.level - Niveau de la formation
+ * @param {string} props.formation.startDate - Date de début de la formation
+ * @param {string} props.formation.duration - Durée de la formation
+ * @param {number} props.formation.maxParticipants - Nombre maximum de participants
+ * @param {string} props.formation.instructor - Formateur
+ * @param {"upcoming" | "ongoing" | "completed"} props.formation.status - Statut de la formation
+ * 
+ * @returns {JSX.Element} Boîte de dialogue pour la gestion des formations
+ */
 import { useState } from "react";
 import {
   Dialog,
@@ -20,20 +48,21 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 
+// Interface des propriétés du composant
 interface FormationDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  formation?: {
-    id?: string;
-    title: string;
-    description: string;
-    price: number;
-    level: string;
-    startDate: string;
-    duration: string;
-    maxParticipants: number;
-    instructor: string;
-    status: "upcoming" | "ongoing" | "completed";
+  open: boolean;                  // État d'ouverture de la boîte de dialogue
+  onOpenChange: (open: boolean) => void;  // Fonction de changement d'état
+  formation?: {                   // Formation optionnelle à éditer
+    id?: string;                  // Identifiant de la formation
+    title: string;                // Titre de la formation
+    description: string;          // Description de la formation
+    price: number;                // Prix de la formation
+    level: string;                // Niveau de la formation
+    startDate: string;            // Date de début de la formation
+    duration: string;             // Durée de la formation
+    maxParticipants: number;      // Nombre maximum de participants
+    instructor: string;           // Formateur
+    status: "upcoming" | "ongoing" | "completed";  // Statut de la formation
   };
 }
 
@@ -42,8 +71,11 @@ export function FormationDialog({
   onOpenChange,
   formation,
 }: FormationDialogProps) {
+  // Détermine si le composant est en mode édition
   const isEditing = !!formation;
   const { toast } = useToast();
+
+  // État du formulaire avec valeurs par défaut
   const [formData, setFormData] = useState({
     title: formation?.title || "",
     description: formation?.description || "",
@@ -56,10 +88,15 @@ export function FormationDialog({
     status: formation?.status || "upcoming",
   });
 
+  /**
+   * Gère la soumission du formulaire
+   * 
+   * @param {React.FormEvent} e - Événement de soumission du formulaire
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Ici, vous ajouteriez l'appel API pour créer/modifier la formation
+      // Appel API pour créer ou modifier la formation
       const response = await fetch("/api/formations", {
         method: isEditing ? "PUT" : "POST",
         headers: {
@@ -73,6 +110,7 @@ export function FormationDialog({
 
       if (!response.ok) throw new Error("Erreur lors de la sauvegarde");
 
+      // Notification de succès
       toast({
         title: isEditing ? "Formation modifiée" : "Formation créée",
         description: isEditing
@@ -81,6 +119,7 @@ export function FormationDialog({
       });
       onOpenChange(false);
     } catch (error) {
+      // Notification d'erreur
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la sauvegarde.",
@@ -92,17 +131,23 @@ export function FormationDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[625px]">
+        {/* En-tête de la boîte de dialogue */}
         <DialogHeader>
+          {/* Titre dynamique selon le mode */}
           <DialogTitle>
             {isEditing ? "Modifier la formation" : "Nouvelle formation"}
           </DialogTitle>
+          {/* Description dynamique selon le mode */}
           <DialogDescription>
             {isEditing
               ? "Modifiez les informations de la formation ici."
               : "Créez une nouvelle formation en remplissant les informations ci-dessous."}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Formulaire de saisie des informations de la formation */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Champ de titre */}
           <div className="space-y-2">
             <Label htmlFor="title">Titre</Label>
             <Input
@@ -114,6 +159,8 @@ export function FormationDialog({
               placeholder="Titre de la formation"
             />
           </div>
+
+          {/* Champ de description */}
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
@@ -126,7 +173,10 @@ export function FormationDialog({
               className="h-32"
             />
           </div>
+
+          {/* Grille de sélection de prix et niveau */}
           <div className="grid grid-cols-2 gap-4">
+            {/* Champ de prix */}
             <div className="space-y-2">
               <Label htmlFor="price">Prix (€)</Label>
               <Input
@@ -139,6 +189,8 @@ export function FormationDialog({
                 placeholder="Prix"
               />
             </div>
+
+            {/* Sélecteur de niveau */}
             <div className="space-y-2">
               <Label htmlFor="level">Niveau</Label>
               <Select
@@ -158,7 +210,10 @@ export function FormationDialog({
               </Select>
             </div>
           </div>
+
+          {/* Grille de sélection de date et durée */}
           <div className="grid grid-cols-2 gap-4">
+            {/* Champ de date de début */}
             <div className="space-y-2">
               <Label htmlFor="startDate">Date de début</Label>
               <Input
@@ -170,6 +225,8 @@ export function FormationDialog({
                 }
               />
             </div>
+
+            {/* Champ de durée */}
             <div className="space-y-2">
               <Label htmlFor="duration">Durée</Label>
               <Input
@@ -182,7 +239,10 @@ export function FormationDialog({
               />
             </div>
           </div>
+
+          {/* Grille de sélection de participants et formateur */}
           <div className="grid grid-cols-2 gap-4">
+            {/* Champ de nombre maximum de participants */}
             <div className="space-y-2">
               <Label htmlFor="maxParticipants">Nombre max. de participants</Label>
               <Input
@@ -197,6 +257,8 @@ export function FormationDialog({
                 }
               />
             </div>
+
+            {/* Champ de formateur */}
             <div className="space-y-2">
               <Label htmlFor="instructor">Formateur</Label>
               <Input
@@ -209,6 +271,8 @@ export function FormationDialog({
               />
             </div>
           </div>
+
+          {/* Sélecteur de statut */}
           <div className="space-y-2">
             <Label htmlFor="status">Statut</Label>
             <Select
@@ -223,11 +287,14 @@ export function FormationDialog({
               <SelectContent>
                 <SelectItem value="upcoming">À venir</SelectItem>
                 <SelectItem value="ongoing">En cours</SelectItem>
-                <SelectItem value="completed">Terminé</SelectItem>
+                <SelectItem value="completed">Terminée</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {/* Boutons de pied de page */}
           <DialogFooter>
+            {/* Bouton d'annulation */}
             <Button
               type="button"
               variant="outline"
@@ -235,6 +302,7 @@ export function FormationDialog({
             >
               Annuler
             </Button>
+            {/* Bouton de soumission dynamique */}
             <Button type="submit">
               {isEditing ? "Modifier" : "Créer"}
             </Button>

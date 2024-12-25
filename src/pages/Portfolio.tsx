@@ -1,29 +1,47 @@
+// Page de Portfolio personnel
+// Affiche et filtre les projets réalisés avec des fonctionnalités interactives
+
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { ExternalLink, Github, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";  // Bibliothèque d'animations
+import { ExternalLink, Github, ChevronLeft, ChevronRight } from "lucide-react";  // Icônes
+
+// Composants de navigation et de mise en page
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import FilterBar from "../components/FilterBar";
 import { PortfolioGridSkeleton } from "../components/LoadingStates";
+
+// Hook personnalisé pour gérer les préférences de vue
 import useViewPreferences from "../hooks/useViewPreferences";
+
+// Données statiques des projets
 import { projects } from "../data/projects";
 import { Button } from "../components/ui/button";
 
+// Nombre de projets affichés par page
 const ITEMS_PER_PAGE = 6;
 
+/**
+ * Page de Portfolio
+ * Permet de visualiser, filtrer et paginer les projets
+ * @returns Composant de la page de portfolio
+ */
 const Portfolio = () => {
+  // États de chargement et de pagination
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   
+  // Hook de gestion des préférences de vue
   const { 
-    viewMode, 
-    selectedTechnologies, 
-    searchQuery, 
-    setViewMode, 
-    setSelectedTechnologies, 
-    setSearchQuery 
+    viewMode,           // Mode d'affichage (grille/liste)
+    selectedTechnologies, // Technologies sélectionnées pour filtrer
+    searchQuery,        // Requête de recherche
+    setViewMode,        // Fonction pour changer le mode de vue
+    setSelectedTechnologies, // Fonction pour mettre à jour les technologies
+    setSearchQuery      // Fonction pour mettre à jour la recherche
   } = useViewPreferences("portfolio-preferences");
 
+  // Simulation de chargement
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -31,6 +49,7 @@ const Portfolio = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Filtrage des projets selon les critères de recherche
   const filteredProjects = projects.filter(project => {
     const matchesTech = selectedTechnologies.length === 0 || 
       project.technologies.some(tech => selectedTechnologies.includes(tech));
@@ -40,6 +59,7 @@ const Portfolio = () => {
     return matchesTech && matchesSearch;
   });
 
+  // Calcul de la pagination
   const totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedProjects = filteredProjects.slice(
@@ -47,14 +67,17 @@ const Portfolio = () => {
     startIndex + ITEMS_PER_PAGE
   );
 
+  // Réinitialisation de la page lors du changement de filtres
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedTechnologies, searchQuery]);
 
   return (
+    // Conteneur principal avec dégradé de fond
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <Navbar />
       <div className="container mx-auto px-4 py-20">
+        {/* Titre animé de la section */}
         <motion.div
           className="text-center mb-12"
           initial={{ opacity: 0, y: 20 }}
@@ -68,6 +91,7 @@ const Portfolio = () => {
           </p>
         </motion.div>
 
+        {/* Barre de filtres et de recherche */}
         <FilterBar
           selectedTechnologies={selectedTechnologies}
           onTechnologyChange={setSelectedTechnologies}
@@ -77,6 +101,7 @@ const Portfolio = () => {
           onSearchQueryChange={setSearchQuery}
         />
 
+        {/* Message si aucun projet ne correspond aux filtres */}
         {!isLoading && filteredProjects.length === 0 && (
           <motion.p
             className="text-center text-secondary-light mt-8"
@@ -88,6 +113,7 @@ const Portfolio = () => {
         )}
 
         <div className="mt-8">
+          {/* Skeleton de chargement ou grille de projets */}
           {isLoading ? (
             <PortfolioGridSkeleton count={ITEMS_PER_PAGE} />
           ) : (
@@ -101,6 +127,7 @@ const Portfolio = () => {
                   : "grid-cols-1"
               } gap-8`}
             >
+              {/* Carte de projet avec animations */}
               {paginatedProjects.map((project, index) => (
                 <motion.article
                   key={project.id}
@@ -109,6 +136,7 @@ const Portfolio = () => {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col"
                 >
+                  {/* Image du projet */}
                   <div className="relative">
                     <img
                       src={project.image}
@@ -116,6 +144,7 @@ const Portfolio = () => {
                       className="w-full h-48 object-cover"
                     />
                   </div>
+                  {/* Détails du projet */}
                   <div className="p-6 flex-1 flex flex-col">
                     <h2 className="text-xl font-semibold text-secondary-dark mb-2">
                       {project.title}
@@ -123,6 +152,7 @@ const Portfolio = () => {
                     <p className="text-secondary-light mb-4">
                       {project.description}
                     </p>
+                    {/* Technologies utilisées */}
                     <div className="flex flex-wrap gap-2 mb-4">
                       {project.technologies.map((tech) => (
                         <span
@@ -133,6 +163,7 @@ const Portfolio = () => {
                         </span>
                       ))}
                     </div>
+                    {/* Boutons d'action */}
                     <div className="mt-auto pt-4 border-t flex gap-4">
                       <a
                         href={project.link}
@@ -160,8 +191,10 @@ const Portfolio = () => {
           )}
         </div>
 
+        {/* Pagination */}
         {!isLoading && totalPages > 1 && (
           <div className="mt-8 flex justify-center gap-2">
+            {/* Bouton page précédente */}
             <Button
               variant="outline"
               size="icon"
@@ -170,6 +203,7 @@ const Portfolio = () => {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
+            {/* Boutons de numéros de page */}
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <Button
                 key={page}
@@ -180,6 +214,7 @@ const Portfolio = () => {
                 {page}
               </Button>
             ))}
+            {/* Bouton page suivante */}
             <Button
               variant="outline"
               size="icon"
