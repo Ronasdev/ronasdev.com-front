@@ -3,6 +3,7 @@
 
 import { motion } from "framer-motion";
 import { Code, BookOpen, Users, Smartphone, Globe, Database, Cloud, GitBranch, Terminal } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";  // Ajout du hook de thème
 
 /**
  * Composant Services
@@ -11,6 +12,8 @@ import { Code, BookOpen, Users, Smartphone, Globe, Database, Cloud, GitBranch, T
  * @returns {JSX.Element} Section des services
  */
 const Services = () => {
+  const { theme } = useTheme();  // Récupération du thème actuel
+
   // Configuration statique des services proposés
   const services = [
     {
@@ -61,15 +64,23 @@ const Services = () => {
   ];
 
   return (
-    // Section avec fond blanc et padding vertical
-    <section className="py-20 bg-white">
+    // Section avec fond adaptatif
+    <section className={`
+      py-20 
+      ${theme === 'dark' 
+        ? 'bg-secondary-dark/10' 
+        : 'bg-white'}
+    `}>
       {/* Conteneur avec largeur maximale et centrage */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* En-tête de section avec animations */}
         <div className="text-center mb-12">
           {/* Titre animé */}
           <motion.h2 
-            className="text-3xl font-bold text-secondary-dark mb-4"
+            className={`
+              text-3xl font-bold mb-4
+              ${theme === 'dark' ? 'text-white' : 'text-secondary-dark'}
+            `}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -79,7 +90,10 @@ const Services = () => {
           </motion.h2>
           {/* Sous-titre animé */}
           <motion.p 
-            className="text-secondary-light max-w-2xl mx-auto"
+            className={`
+              max-w-2xl mx-auto
+              ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+            `}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -101,18 +115,34 @@ const Services = () => {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
               // Carte de service avec effet de survol
-              className="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+              className={`
+                p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow
+                ${theme === 'dark' 
+                  ? 'bg-secondary-dark/10 border border-secondary-dark/20' 
+                  : 'bg-white'}
+              `}
             >
               {/* Icône du service */}
-              <div className="text-primary mb-6 flex justify-center">{service.icon}</div>
+              <div className={`
+                mb-6 flex justify-center
+                ${theme === 'dark' ? 'text-primary-light' : 'text-primary'}
+              `}>
+                {service.icon}
+              </div>
               
               {/* Titre du service */}
-              <h3 className="text-xl font-semibold text-secondary-dark mb-4 text-center">
+              <h3 className={`
+                text-xl font-semibold mb-4 text-center
+                ${theme === 'dark' ? 'text-white' : 'text-secondary-dark'}
+              `}>
                 {service.title}
               </h3>
               
               {/* Description du service */}
-              <p className="text-secondary-light text-center">
+              <p className={`
+                text-center
+                ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+              `}>
                 {service.description}
               </p>
             </motion.div>

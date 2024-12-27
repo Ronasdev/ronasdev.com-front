@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react"
-import { Theme } from "next-themes"
+
+type Theme = "dark" | "light" | "system"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -22,7 +23,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  storageKey = "vite-ui-theme",
+  storageKey = "ronasdev-theme",
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
@@ -44,6 +45,7 @@ export function ThemeProvider({
     }
 
     root.classList.add(theme)
+    localStorage.setItem(storageKey, theme)
   }, [theme])
 
   const value = {

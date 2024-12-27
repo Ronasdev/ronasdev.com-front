@@ -93,6 +93,8 @@ export const authService = {
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
         try {
             const response = await axios.post<AuthResponse>(`${API_URL}/auth/login`, credentials);
+            console.log("login data");
+            console.dir(response);
             this.setToken(response.data.token);
             this.setUser(response.data.user);
             return response.data;

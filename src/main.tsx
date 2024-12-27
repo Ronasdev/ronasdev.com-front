@@ -2,13 +2,14 @@
 // Responsable de l'initialisation et du rendu de l'application
 
 // Importations des dépendances essentielles
-import React from 'react'  // Bibliothèque React pour la création de composants
-import { createRoot } from 'react-dom/client'  // Méthode de rendu moderne de React
-import { ErrorBoundary } from 'react-error-boundary'  // Gestion des erreurs de rendu
-import { ThemeProvider } from '@/components/theme-provider'  // Fournisseur de thème personnalisé
-import { Toaster } from '@/components/ui/toaster'  // Composant de notifications
-import App from './App'  // Composant racine de l'application
-import './index.css'  // Styles globaux de l'application
+import React from 'react';  // Bibliothèque React pour la création de composants
+import ReactDOM from 'react-dom/client';  // Méthode de rendu moderne de React
+import { BrowserRouter } from 'react-router-dom';  // Routeur pour les applications à page unique
+import { ThemeProvider } from '@/components/theme-provider';
+import { Toaster } from '@/components/ui/toaster';
+import { ErrorBoundary } from 'react-error-boundary';
+import App from './App';  // Composant racine de l'application
+import './index.css';  // Styles globaux de l'application
 
 // Fonction de gestion des erreurs globales
 const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void }) => {
@@ -27,19 +28,17 @@ const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error, resetError
 }
 
 // Rendu de l'application avec gestion des erreurs et thème
-createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    {/* Gestion des erreurs de rendu */}
     <ErrorBoundary 
       FallbackComponent={ErrorFallback}
       onReset={() => window.location.reload()}
     >
-      {/* Fournisseur de thème */}
       <ThemeProvider defaultTheme="dark" storageKey="ronasdev-theme">
-        {/* Composant principal de l'application */}
-        <App />
-        
-        {/* Système de notifications */}
+        {/* <BrowserRouter> */}
+          {/* Composant principal de l'application */}
+          <App />
+        {/* </BrowserRouter> */}
         <Toaster />
       </ThemeProvider>
     </ErrorBoundary>

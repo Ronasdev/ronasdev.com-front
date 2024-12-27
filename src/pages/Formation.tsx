@@ -7,6 +7,7 @@ import FormationFilterBar from "../components/FormationFilterBar";
 import FormationStats from "../components/FormationStats";
 import FormationRegistration from "../components/FormationRegistration";
 import { Formation } from "../types/formation";
+import { useTheme } from "@/components/theme-provider";
 
 // Données des formations
 const formations: Formation[] = [
@@ -248,120 +249,90 @@ const formations: Formation[] = [
 ];
 
 const FormationPage = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedLevel, setSelectedLevel] = useState("all");
-  const [selectedPriceRange, setSelectedPriceRange] = useState("all");
-  const [selectedDuration, setSelectedDuration] = useState("all");
+  const { theme } = useTheme();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<Formation | null>(null);
 
+  // Filtrage des formations
   const filteredFormations = useMemo(() => {
     return formations.filter((formation) => {
-      const matchesSearch = formation.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        formation.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesLevel = selectedLevel === "all" || formation.level === selectedLevel;
-
-      const matchesPriceRange = selectedPriceRange === "all" || (() => {
-        const price = formation.price;
-        switch (selectedPriceRange) {
-          case "0-500": return price <= 500;
-          case "500-1000": return price > 500 && price <= 1000;
-          case "1000+": return price > 1000;
-          default: return true;
-        }
-      })();
-
-      const matchesDuration = selectedDuration === "all" || (() => {
-        const months = parseInt(formation.duration);
-        switch (selectedDuration) {
-          case "1-2": return months <= 2;
-          case "3-4": return months > 2 && months <= 4;
-          case "5+": return months >= 5;
-          default: return true;
-        }
-      })();
-
-      return matchesSearch && matchesLevel && matchesPriceRange && matchesDuration;
+      const categoryMatch = !selectedCategory || formation.category === selectedCategory;
+      const levelMatch = !selectedLevel || formation.level === selectedLevel;
+      return categoryMatch && levelMatch;
     });
-  }, [searchQuery, selectedLevel, selectedPriceRange, selectedDuration]);
+  }, [selectedCategory, selectedLevel]);
 
-  const stats = {
-    totalFormations: formations.length,
-    totalStudents: 30,
-    upcomingSessions: formations.length * 2,
-    satisfactionRate: 99,
-  };
-
+  // Gestion de l'inscription
   const handleRegister = (formation: Formation) => {
     setSelectedFormation(formation);
   };
 
+  // Fermeture du modal d'inscription
+  const handleCloseRegistration = () => {
+    setSelectedFormation(null);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className={`
+      min-h-screen 
+      ${theme === 'dark' 
+        ? 'bg-gradient-to-b from-secondary-dark/50 to-secondary-dark/20' 
+        : 'bg-gradient-to-b from-white to-gray-50'}
+    `}>
       <Navbar />
-      <main className="container mx-auto px-4 py-20">
-        {/* En-tête */}
+      <div className="pt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* En-tête de page */}
         <motion.div
+          className="text-center mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          transition={{ duration: 0.5 }}
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Formations Professionnelles
+          <h1 className={`
+            text-4xl font-bold mb-4
+            ${theme === 'dark' ? 'text-white' : 'text-secondary-dark'}
+          `}>
+            Formations Développement Web
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Développez vos compétences avec nos formations spécialisées en
-            développement web et technologies modernes.
+          <p className={`
+            text-xl 
+            ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+          `}>
+            Développez vos compétences techniques avec des formations pratiques
           </p>
         </motion.div>
 
-        {/* Statistiques */}
-        <FormationStats {...stats} />
-
-        {/* Barre de filtrage */}
+        {/* Barre de filtres */}
         <FormationFilterBar
-          searchQuery={searchQuery}
-          selectedLevel={selectedLevel}
-          selectedPriceRange={selectedPriceRange}
-          selectedDuration={selectedDuration}
-          onSearchChange={setSearchQuery}
+          onCategoryChange={setSelectedCategory}
           onLevelChange={setSelectedLevel}
-          onPriceRangeChange={setSelectedPriceRange}
-          onDurationChange={setSelectedDuration}
+          selectedCategory={selectedCategory}
+          selectedLevel={selectedLevel}
         />
 
-        {/* Liste des formations */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Statistiques des formations */}
+        <FormationStats formations={filteredFormations} />
+
+        {/* Grille des formations */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
           {filteredFormations.map((formation) => (
             <FormationCard
               key={formation.id}
               formation={formation}
-              onRegister={() => setSelectedFormation(formation)}
+              onRegister={handleRegister}
             />
           ))}
         </div>
-
-        {/* Message si aucune formation trouvée */}
-        {filteredFormations.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-12"
-          >
-            <p className="text-gray-500 text-lg">
-              Aucune formation ne correspond à vos critères de recherche.
-            </p>
-          </motion.div>
-        )}
 
         {/* Modal d'inscription */}
         {selectedFormation && (
           <FormationRegistration
             formation={selectedFormation}
-            onClose={() => setSelectedFormation(null)}
+            onClose={handleCloseRegistration}
           />
         )}
-      </main>
+      </div>
       <Footer />
     </div>
   );

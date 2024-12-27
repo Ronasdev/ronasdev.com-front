@@ -11,29 +11,17 @@ import { motion } from "framer-motion";
 import { Calendar, Clock, Tag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { blogPosts, getRelatedPosts } from "../data/blogPosts";
+import { useTheme } from "@/components/theme-provider";
 
-/**
- * Page de détail d'un article de blog
- * Fonctionnalités:
- * - Affichage du contenu complet de l'article
- * - Système de commentaires interactif
- * - Gestion des états de chargement
- * - Redirection si l'article n'existe pas
- * 
- * @returns {JSX.Element} Page de détail d'article
- */
 const BlogPost = () => {
-  // Récupération du slug depuis l'URL
+  const { theme } = useTheme();
   const { slug } = useParams<{ slug: string }>();
   
-  // État de chargement
   const [isLoading, setIsLoading] = useState(true);
 
-  // Récupération de l'article et des articles connexes
   const post = blogPosts.find((post) => post.slug === slug);
   const relatedPosts = slug ? getRelatedPosts(slug, 3) : [];
 
-  // Simulation de chargement
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -41,7 +29,6 @@ const BlogPost = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // État initial des commentaires
   const [comments, setComments] = useState([
     {
       id: "1",
@@ -69,15 +56,18 @@ const BlogPost = () => {
     },
   ]);
 
-  // Redirection si l'article n'existe pas
   if (!isLoading && !post) {
     return <Navigate to="/404" />;
   }
 
-  // Skeleton loader pendant le chargement
   if (isLoading || !post) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+      <div className={`
+        min-h-screen 
+        ${theme === 'dark' 
+          ? 'bg-gradient-to-b from-secondary-dark/50 to-secondary-dark/20' 
+          : 'bg-gradient-to-b from-white to-gray-50'}
+      `}>
         <Navbar />
         <div className="animate-pulse pt-20 pb-12">
           <div className="h-96 bg-gray-200 mb-8" />
@@ -96,11 +86,6 @@ const BlogPost = () => {
     );
   }
 
-  /**
-   * Ajoute un nouveau commentaire
-   * @param content Contenu du commentaire
-   * @param parentId ID du commentaire parent (pour les réponses)
-   */
   const handleAddComment = (content: string, parentId?: string) => {
     const newComment = {
       id: Date.now().toString(),
@@ -115,7 +100,6 @@ const BlogPost = () => {
     };
 
     if (parentId) {
-      // Ajout d'une réponse à un commentaire existant
       setComments(comments.map(comment => {
         if (comment.id === parentId) {
           return {
@@ -126,18 +110,12 @@ const BlogPost = () => {
         return comment;
       }));
     } else {
-      // Ajout d'un nouveau commentaire principal
       setComments([...comments, newComment]);
     }
   };
 
-  /**
-   * Gère l'action de like/unlike sur un commentaire
-   * @param commentId ID du commentaire à liker
-   */
   const handleLikeComment = (commentId: string) => {
     setComments(comments.map(comment => {
-      // Vérifie et met à jour le commentaire principal
       if (comment.id === commentId) {
         return {
           ...comment,
@@ -145,7 +123,6 @@ const BlogPost = () => {
           isLiked: !comment.isLiked,
         };
       }
-      // Vérifie et met à jour les réponses aux commentaires
       if (comment.replies) {
         return {
           ...comment,
@@ -165,32 +142,28 @@ const BlogPost = () => {
     }));
   };
 
-  /**
-   * Signale un commentaire inapproprié
-   * @param commentId ID du commentaire à signaler
-   */
   const handleReportComment = (commentId: string) => {
-    // Implémentation du signalement
     console.log("Commentaire signalé:", commentId);
   };
 
   return (
-    // Conteneur principal avec dégradé de fond
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className={`
+      min-h-screen 
+      ${theme === 'dark' 
+        ? 'bg-gradient-to-b from-secondary-dark/50 to-secondary-dark/20' 
+        : 'bg-gradient-to-b from-white to-gray-50'}
+    `}>
       <Navbar />
       <article className="pt-20 pb-12">
-        {/* En-tête de l'article avec image de couverture */}
         <div className="relative h-96 mb-8">
           <img
             src={post.image}
             alt={post.title}
             className="w-full h-full object-cover"
           />
-          {/* Superposition sombre pour améliorer la lisibilité du titre */}
           <div className="absolute inset-0 bg-black bg-opacity-40" />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center text-white px-4">
-              {/* Titre animé */}
               <motion.h1
                 className="text-4xl md:text-5xl font-bold mb-4"
                 initial={{ opacity: 0, y: 20 }}
@@ -203,81 +176,68 @@ const BlogPost = () => {
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          {/* Métadonnées de l'article */}
-          <div className="flex flex-wrap items-center justify-between mb-8">
-            {/* Informations de l'auteur */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Informations de l'article */}
+          <div className={`
+            flex items-center justify-between mb-8
+            ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}
+          `}>
             <div className="flex items-center space-x-4">
-              <img
-                src={post.author.avatar}
-                alt={post.author.name}
-                className="w-12 h-12 rounded-full"
-              />
-              <div>
-                <div className="font-semibold">{post.author.name}</div>
-                <div className="text-sm text-gray-500">{post.excerpt}</div>
+              <div className="flex items-center space-x-2">
+                <Calendar className="w-5 h-5" />
+                <span>{new Date(post.date).toLocaleDateString('fr-FR')}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Clock className="w-5 h-5" />
+                <span>{post.readTime} min de lecture</span>
               </div>
             </div>
-            {/* Informations de lecture */}
-            <div className="flex items-center space-x-4 text-sm text-gray-500 mt-4 sm:mt-0">
-              <span className="flex items-center">
-                <Calendar className="w-4 h-4 mr-1" />
-                {new Date(post.date).toLocaleDateString()}
-              </span>
-              <span className="flex items-center">
-                <Clock className="w-4 h-4 mr-1" />
-                {post.readTime} min de lecture
-              </span>
+            <div className="flex items-center space-x-2">
+              <Tag className="w-5 h-5" />
+              <span>{post.category}</span>
             </div>
           </div>
 
-          {/* Disposition flexible du contenu */}
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Contenu principal */}
-            <div className="lg:w-3/4">
-              {/* Contenu de l'article */}
-              <div 
-                className="prose lg:prose-xl max-w-none"
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
+          {/* Contenu de l'article */}
+          <div className={`
+            prose lg:prose-xl 
+            ${theme === 'dark' 
+              ? 'prose-invert prose-dark' 
+              : 'prose-light'}
+            mx-auto
+          `}>
+            {post.content.map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+          </div>
 
-              {/* Boutons de partage */}
-              <div className="mt-8">
-                <ShareButtons
-                  url={`${window.location.origin}/blog/${post.slug}`}
-                  title={post.title}
-                />
-              </div>
+          {/* Boutons de partage */}
+          <div className="mt-12">
+            <ShareButtons 
+              url={`/blog/${post.slug}`} 
+              title={post.title} 
+            />
+          </div>
 
-              {/* Section des commentaires */}
-              <Comments
-                comments={comments}
-                onAddComment={handleAddComment}
-                onLikeComment={handleLikeComment}
-                onReportComment={handleReportComment}
-              />
-            </div>
+          {/* Articles connexes */}
+          <div className="mt-16">
+            <h3 className={`
+              text-2xl font-bold mb-6
+              ${theme === 'dark' ? 'text-white' : 'text-secondary-dark'}
+            `}>
+              Articles connexes
+            </h3>
+            <RelatedPosts posts={relatedPosts} />
+          </div>
 
-            {/* Sidebar */}
-            <div className="lg:w-1/4">
-              {/* Catégories */}
-              <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-                <h3 className="text-xl font-semibold mb-4">Catégories</h3>
-                <div className="flex flex-wrap gap-2">
-                  {post.categories.map(category => (
-                    <span
-                      key={category}
-                      className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
-                    >
-                      {category}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Articles connexes */}
-              <RelatedPosts posts={relatedPosts} />
-            </div>
+          {/* Commentaires */}
+          <div className="mt-16">
+            <Comments 
+              comments={comments}
+              onAddComment={handleAddComment}
+              onLikeComment={handleLikeComment}
+              onReportComment={handleReportComment}
+            />
           </div>
         </div>
       </article>

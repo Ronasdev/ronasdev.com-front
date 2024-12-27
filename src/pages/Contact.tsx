@@ -5,6 +5,7 @@ import { Mail, Phone, MapPin, Send } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/components/theme-provider";  
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +14,8 @@ const Contact = () => {
     subject: "",
     message: "",
   });
+
+  const { theme } = useTheme();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,11 +27,19 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className={`
+      min-h-screen 
+      ${theme === 'dark' 
+        ? 'bg-gradient-to-b from-secondary-dark/50 to-secondary-dark/20' 
+        : 'bg-gradient-to-b from-white to-gray-50'}
+    `}>
       <Navbar />
       <div className="pt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.h1 
-          className="text-4xl font-bold text-secondary-dark mb-8"
+          className={`
+            text-4xl font-bold mb-8
+            ${theme === 'dark' ? 'text-white' : 'text-secondary-dark'}
+          `}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -36,7 +47,10 @@ const Contact = () => {
           Contact
         </motion.h1>
         <motion.p 
-          className="text-xl text-secondary-light mb-12"
+          className={`
+            text-xl mb-12
+            ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+          `}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -52,35 +66,89 @@ const Contact = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
           >
             <div>
-              <h2 className="text-2xl font-semibold text-secondary-dark mb-4">
+              <h2 className={`
+                text-2xl font-semibold mb-4
+                ${theme === 'dark' ? 'text-white' : 'text-secondary-dark'}
+              `}>
                 Informations de contact
               </h2>
               <div className="space-y-4">
                 <div className="flex items-center space-x-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Phone className="w-6 h-6 text-primary" />
+                  <div className={`
+                    p-3 rounded-full
+                    ${theme === 'dark' 
+                      ? 'bg-primary-dark/20' 
+                      : 'bg-primary/10'}
+                  `}>
+                    <Phone className={`
+                      w-6 h-6 
+                      ${theme === 'dark' ? 'text-primary-light' : 'text-primary'}
+                    `} />
                   </div>
                   <div>
-                    <h3 className="font-medium text-secondary-dark">Téléphone</h3>
-                    <p className="text-secondary-light">+229 60934817</p>
+                    <h3 className={`
+                      font-medium
+                      ${theme === 'dark' ? 'text-gray-200' : 'text-secondary-dark'}
+                    `}>
+                      Téléphone
+                    </h3>
+                    <p className={`
+                      ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                    `}>
+                      +229 60934817
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Mail className="w-6 h-6 text-primary" />
+                  <div className={`
+                    p-3 rounded-full
+                    ${theme === 'dark' 
+                      ? 'bg-primary-dark/20' 
+                      : 'bg-primary/10'}
+                  `}>
+                    <Mail className={`
+                      w-6 h-6 
+                      ${theme === 'dark' ? 'text-primary-light' : 'text-primary'}
+                    `} />
                   </div>
                   <div>
-                    <h3 className="font-medium text-secondary-dark">Email</h3>
-                    <p className="text-secondary-light">contact@ronasdev.com</p>
+                    <h3 className={`
+                      font-medium
+                      ${theme === 'dark' ? 'text-gray-200' : 'text-secondary-dark'}
+                    `}>
+                      Email
+                    </h3>
+                    <p className={`
+                      ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                    `}>
+                      contact@ronasdev.com
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <MapPin className="w-6 h-6 text-primary" />
+                  <div className={`
+                    p-3 rounded-full
+                    ${theme === 'dark' 
+                      ? 'bg-primary-dark/20' 
+                      : 'bg-primary/10'}
+                  `}>
+                    <MapPin className={`
+                      w-6 h-6 
+                      ${theme === 'dark' ? 'text-primary-light' : 'text-primary'}
+                    `} />
                   </div>
                   <div>
-                    <h3 className="font-medium text-secondary-dark">Adresse</h3>
-                    <p className="text-secondary-light">Cotonou, Bénin</p>
+                    <h3 className={`
+                      font-medium
+                      ${theme === 'dark' ? 'text-gray-200' : 'text-secondary-dark'}
+                    `}>
+                      Adresse
+                    </h3>
+                    <p className={`
+                      ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                    `}>
+                      Cotonou, Bénin
+                    </p>
                   </div>
                 </div>
               </div>
@@ -89,13 +157,24 @@ const Contact = () => {
 
           <motion.form
             onSubmit={handleSubmit}
-            className="space-y-6 bg-white p-8 rounded-lg shadow-lg"
+            className={`
+              space-y-6 rounded-lg shadow-lg p-8
+              ${theme === 'dark' 
+                ? 'bg-secondary-dark/10 border border-secondary-dark/20' 
+                : 'bg-white'}
+            `}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
             <div>
-              <label htmlFor="name" className="block text-secondary-light mb-2">
+              <label 
+                htmlFor="name" 
+                className={`
+                  block mb-2
+                  ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                `}
+              >
                 Nom complet
               </label>
               <input
@@ -103,12 +182,23 @@ const Contact = () => {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                className={`
+                  w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2
+                  ${theme === 'dark' 
+                    ? 'bg-secondary-dark/20 text-white border-secondary-dark/30 focus:ring-primary-light' 
+                    : 'border border-gray-300 focus:ring-primary'}
+                `}
                 required
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-secondary-light mb-2">
+              <label 
+                htmlFor="email" 
+                className={`
+                  block mb-2
+                  ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                `}
+              >
                 Email
               </label>
               <input
@@ -116,12 +206,23 @@ const Contact = () => {
                 id="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                className={`
+                  w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2
+                  ${theme === 'dark' 
+                    ? 'bg-secondary-dark/20 text-white border-secondary-dark/30 focus:ring-primary-light' 
+                    : 'border border-gray-300 focus:ring-primary'}
+                `}
                 required
               />
             </div>
             <div>
-              <label htmlFor="subject" className="block text-secondary-light mb-2">
+              <label 
+                htmlFor="subject" 
+                className={`
+                  block mb-2
+                  ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                `}
+              >
                 Sujet
               </label>
               <input
@@ -129,12 +230,23 @@ const Contact = () => {
                 id="subject"
                 value={formData.subject}
                 onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                className={`
+                  w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2
+                  ${theme === 'dark' 
+                    ? 'bg-secondary-dark/20 text-white border-secondary-dark/30 focus:ring-primary-light' 
+                    : 'border border-gray-300 focus:ring-primary'}
+                `}
                 required
               />
             </div>
             <div>
-              <label htmlFor="message" className="block text-secondary-light mb-2">
+              <label 
+                htmlFor="message" 
+                className={`
+                  block mb-2
+                  ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                `}
+              >
                 Message
               </label>
               <textarea
@@ -142,13 +254,23 @@ const Contact = () => {
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                className={`
+                  w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2
+                  ${theme === 'dark' 
+                    ? 'bg-secondary-dark/20 text-white border-secondary-dark/30 focus:ring-primary-light' 
+                    : 'border border-gray-300 focus:ring-primary'}
+                `}
                 required
               ></textarea>
             </div>
             <Button
               type="submit"
-              className="w-full bg-primary hover:bg-primary-dark text-white flex items-center justify-center space-x-2"
+              className={`
+                w-full flex items-center justify-center space-x-2
+                ${theme === 'dark' 
+                  ? 'bg-primary-light text-secondary-dark hover:bg-primary' 
+                  : 'bg-primary text-white hover:bg-primary-dark'}
+              `}
             >
               <Send className="w-4 h-4" />
               <span>Envoyer le message</span>

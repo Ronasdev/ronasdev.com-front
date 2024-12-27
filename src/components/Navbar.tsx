@@ -4,7 +4,8 @@
 import { useState, useEffect } from "react";
 import { Menu, X, Youtube, Facebook, Github, Home, Briefcase, FolderKanban, GraduationCap, BookOpen, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
-import { ModeToggle } from "@/components/ui/mode-toggle"; // Ajout du bouton de thème
+import { ModeToggle } from "@/components/ui/mode-toggle";
+import { useTheme } from "@/components/theme-provider"; // Ajout du hook de thème
 
 /**
  * Composant de barre de navigation
@@ -15,6 +16,7 @@ const Navbar = () => {
   // États pour gérer l'ouverture du menu mobile et le défilement
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { theme } = useTheme(); // Récupération du thème actuel
 
   // Effet pour détecter le défilement et ajuster le style de la navbar
   useEffect(() => {
@@ -57,14 +59,27 @@ const Navbar = () => {
 
   return (
     // Navbar avec effet de transparence et de flou lors du défilement
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${
-      isScrolled ? "bg-white/80 backdrop-blur-md shadow-lg" : "bg-transparent"
-    }`}>
+    <nav className={`
+      fixed w-full z-50 transition-all duration-300 
+      ${isScrolled ? 
+        (theme === 'dark' ? 
+          'bg-secondary-dark/80 backdrop-blur-md shadow-lg' : 
+          'bg-white/80 backdrop-blur-md shadow-lg'
+        ) : 
+        'bg-transparent'
+      }
+    `}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo/Titre */}
           <div className="flex-shrink-0">
-            <Link to="/" className="text-2xl font-bold text-primary-dark">
+            <Link 
+              to="/" 
+              className={`
+                text-2xl font-bold 
+                ${theme === 'dark' ? 'text-primary-light' : 'text-primary-dark'}
+              `}
+            >
               Ronasdev
             </Link>
           </div>
@@ -76,7 +91,14 @@ const Navbar = () => {
                 <Link
                   key={link.name}
                   to={link.path}
-                  className="flex items-center space-x-2 text-secondary-light hover:text-primary transition-colors"
+                  className={`
+                    flex items-center space-x-2 
+                    ${theme === 'dark' ? 
+                      'text-secondary-light hover:text-primary-light' : 
+                      'text-secondary-dark hover:text-primary-dark'
+                    } 
+                    transition-colors
+                  `}
                 >
                   {link.icon}
                   <span>{link.name}</span>
@@ -95,7 +117,13 @@ const Navbar = () => {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-secondary-light hover:text-primary transition-colors"
+                  className={`
+                    ${theme === 'dark' ? 
+                      'text-secondary-light hover:text-primary-light' : 
+                      'text-secondary-dark hover:text-primary-dark'
+                    } 
+                    transition-colors
+                  `}
                   aria-label={link.name}
                 >
                   {link.icon}
@@ -111,7 +139,13 @@ const Navbar = () => {
           <div className="md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-secondary-light hover:text-primary transition-colors"
+              className={`
+                ${theme === 'dark' ? 
+                  'text-secondary-light hover:text-primary-light' : 
+                  'text-secondary-dark hover:text-primary-dark'
+                } 
+                transition-colors
+              `}
               aria-label="Toggle menu"
             >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -121,13 +155,23 @@ const Navbar = () => {
 
         {/* Menu mobile */}
         <div className={`md:hidden ${isOpen ? "block" : "hidden"}`}>
-          <div className="px-2 pt-2 pb-3 space-y-1">
+          <div className={`
+            px-2 pt-2 pb-3 space-y-1
+            ${theme === 'dark' ? 'bg-secondary-dark/10' : 'bg-white/10'}
+          `}>
             {/* Liens de navigation */}
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
-                className="flex items-center space-x-2 px-3 py-2 text-secondary-light hover:text-primary transition-colors"
+                className={`
+                  flex items-center space-x-2 px-3 py-2 
+                  ${theme === 'dark' ? 
+                    'text-secondary-light hover:text-primary-light' : 
+                    'text-secondary-dark hover:text-primary-dark'
+                  } 
+                  transition-colors
+                `}
                 onClick={() => setIsOpen(false)}
               >
                 {link.icon}
@@ -143,7 +187,13 @@ const Navbar = () => {
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-secondary-light hover:text-primary transition-colors"
+                    className={`
+                      ${theme === 'dark' ? 
+                        'text-secondary-light hover:text-primary-light' : 
+                        'text-secondary-dark hover:text-primary-dark'
+                      } 
+                      transition-colors
+                    `}
                     aria-label={link.name}
                   >
                     {link.icon}

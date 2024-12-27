@@ -1,3 +1,6 @@
+// Page de connexion
+// Permet aux utilisateurs de se connecter à leur compte
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -12,10 +15,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { LoginCredentials } from "@/services/authService";
+import { useTheme } from "@/components/theme-provider"; // Ajout de l'import du thème
 
+// Commentaire : Page de connexion désactivée pour le moment
 export default function Login() {
+  // Gestion du thème
+  const { theme } = useTheme(); // Ajout de la gestion du thème
+  
+  // États locaux
   const [formData, setFormData] = useState<LoginCredentials>({
     email: "",
     password: "",
@@ -32,17 +41,22 @@ export default function Login() {
     };
   }, [clearError]);
 
+  // Gestion de la soumission du formulaire
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
+      // Tentative de connexion via le service d'authentification
       await login(formData);
+      
+      // Exemple de toast pour indiquer que la connexion est réussie
       toast({
         title: "Connexion réussie !",
         description: "Vous allez être redirigé vers votre tableau de bord.",
       });
       navigate("/admin");
     } catch (error: any) {
+      // Gestion des erreurs de connexion
       toast({
         title: "Erreur de connexion",
         description: error.message,
@@ -60,18 +74,41 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
+    <div className={`
+      min-h-screen flex items-center justify-center 
+      ${theme === 'dark' 
+        ? 'bg-gradient-to-b from-secondary-dark/50 to-secondary-dark/20' 
+        : 'bg-gray-50'}
+    `}>
+      <Card className={`
+        w-full max-w-md
+        ${theme === 'dark' 
+          ? 'bg-secondary-dark/10 border-secondary-dark/30' 
+          : 'bg-white'}
+      `}>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">Se connecter</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className={`
+            text-2xl text-center
+            ${theme === 'dark' ? 'text-white' : 'text-gray-900'}
+          `}>
+            Connexion
+          </CardTitle>
+          <CardDescription className={`
+            text-center
+            ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}
+          `}>
             Connectez-vous pour accéder à votre compte
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label 
+                htmlFor="email"
+                className={theme === 'dark' ? 'text-gray-300' : ''}
+              >
+                Email
+              </Label>
               <Input
                 id="email"
                 name="email"
@@ -81,15 +118,30 @@ export default function Login() {
                 onChange={handleChange}
                 required
                 disabled={isLoading}
-                className="w-full"
+                className={`
+                  w-full
+                  ${theme === 'dark' 
+                    ? 'bg-secondary-dark/20 border-secondary-dark/30 text-gray-200 placeholder-gray-400' 
+                    : ''}
+                `}
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Mot de passe</Label>
+                <Label 
+                  htmlFor="password"
+                  className={theme === 'dark' ? 'text-gray-300' : ''}
+                >
+                  Mot de passe
+                </Label>
                 <Link
                   to="/auth/forgot-password"
-                  className="text-sm font-medium text-primary hover:text-primary/90"
+                  className={`
+                    text-sm font-medium
+                    ${theme === 'dark' 
+                      ? 'text-primary-light hover:text-primary-light/80' 
+                      : 'text-primary hover:text-primary/90'}
+                  `}
                 >
                   Mot de passe oublié ?
                 </Link>
@@ -104,12 +156,22 @@ export default function Login() {
                   onChange={handleChange}
                   required
                   disabled={isLoading}
-                  className="pr-10"
+                  className={`
+                    pr-10
+                    ${theme === 'dark' 
+                      ? 'bg-secondary-dark/20 border-secondary-dark/30 text-gray-200 placeholder-gray-400' 
+                      : ''}
+                  `}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
+                  className={`
+                    absolute inset-y-0 right-0 flex items-center pr-3
+                    ${theme === 'dark' 
+                      ? 'text-gray-300 hover:text-gray-100' 
+                      : 'text-gray-400 hover:text-gray-500'}
+                  `}
                   disabled={isLoading}
                 >
                   {showPassword ? (
@@ -123,14 +185,24 @@ export default function Login() {
             <div className="text-sm text-center">
               <Link
                 to="/auth/register"
-                className="font-medium text-primary hover:text-primary/90"
+                className={`
+                  font-medium
+                  ${theme === 'dark' 
+                    ? 'text-primary-light hover:text-primary-light/80' 
+                    : 'text-primary hover:text-primary/90'}
+                `}
               >
                 Pas encore de compte ? Inscrivez-vous
               </Link>
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-primary hover:bg-primary/90"
+              className={`
+                w-full
+                ${theme === 'dark' 
+                  ? 'bg-primary-light hover:bg-primary-light/80' 
+                  : 'bg-primary hover:bg-primary/90'}
+              `}
               disabled={isLoading}
             >
               {isLoading ? (
@@ -147,4 +219,4 @@ export default function Login() {
       </Card>
     </div>
   );
-}
+};

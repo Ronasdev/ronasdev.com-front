@@ -14,6 +14,7 @@ import useViewPreferences from "../hooks/useViewPreferences";
 import ShareButtons from "../components/ShareButtons";
 import PopularCategories from "../components/PopularCategories";
 import Pagination from "../components/Pagination";
+import { useTheme } from "@/components/theme-provider";  // Ajout du hook de thème
 
 // Nombre d'articles par page pour la pagination
 const ITEMS_PER_PAGE = 6;
@@ -33,6 +34,9 @@ const Blog = () => {
   // États de chargement et de pagination
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Récupération du thème actuel
+  const { theme } = useTheme();
   
   // Hook personnalisé pour gérer les préférences de vue
   const { 
@@ -110,7 +114,12 @@ const Blog = () => {
 
   return (
     // Conteneur principal avec dégradé de fond
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className={`
+      min-h-screen 
+      ${theme === 'dark' 
+        ? 'bg-gradient-to-b from-secondary-dark/50 to-secondary-dark/20' 
+        : 'bg-gradient-to-b from-white to-gray-50'}
+    `}>
       <Navbar />
       <main className="container mx-auto px-4 py-20">
         {/* En-tête animé */}
@@ -119,10 +128,16 @@ const Blog = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl font-bold text-secondary-dark mb-4">
+          <h1 className={`
+            text-4xl font-bold mb-4
+            ${theme === 'dark' ? 'text-white' : 'text-secondary-dark'}
+          `}>
             Blog & Actualités
           </h1>
-          <p className="text-secondary-light max-w-2xl mx-auto">
+          <p className={`
+            max-w-2xl mx-auto
+            ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+          `}>
             Découvrez mes derniers articles sur le développement web, 
             les nouvelles technologies et les meilleures pratiques.
           </p>
@@ -138,6 +153,7 @@ const Blog = () => {
           onSortOrderChange={setSortOrder}
           searchQuery={searchQuery}
           onSearchQueryChange={setSearchQuery}
+          theme={theme}
         />
 
         {/* Conteneur principal avec disposition responsive */}
@@ -164,7 +180,13 @@ const Blog = () => {
                   {paginatedPosts.map((post, index) => (
                     <motion.article
                       key={post.slug}
-                      className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+                      className={`
+                        rounded-lg shadow-lg overflow-hidden hover:shadow-xl 
+                        transition-shadow
+                        ${theme === 'dark' 
+                          ? 'bg-secondary-dark/10 border border-secondary-dark/20' 
+                          : 'bg-white'}
+                      `}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -173,13 +195,24 @@ const Blog = () => {
                       <img
                         src={post.image}
                         alt={post.title}
-                        className="w-full h-48 object-cover"
+                        className={`
+                          w-full h-48 object-cover
+                          ${theme === 'dark' ? 'opacity-80' : 'opacity-100'}
+                        `}
                       />
                       <div className="p-6">
                         {/* Métadonnées de l'article */}
-                        <div className="flex items-center space-x-4 text-sm text-secondary-light mb-4">
+                        <div className={`
+                          flex items-center space-x-4 text-sm mb-4
+                          ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                        `}>
                           {/* Catégorie principale */}
-                          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full">
+                          <span className={`
+                            px-3 py-1 rounded-full
+                            ${theme === 'dark' 
+                              ? 'bg-primary-dark/20 text-primary-light' 
+                              : 'bg-primary/10 text-primary'}
+                          `}>
                             {post.categories[0]}
                           </span>
                           {/* Date de publication */}
@@ -198,54 +231,69 @@ const Blog = () => {
                           </div>
                         </div>
                         {/* Titre de l'article */}
-                        <h2 className="text-xl font-semibold text-secondary-dark mb-2">
+                        <h2 className={`
+                          text-xl font-semibold mb-2
+                          ${theme === 'dark' ? 'text-white' : 'text-secondary-dark'}
+                        `}>
                           {post.title}
                         </h2>
                         {/* Extrait de l'article */}
-                        <p className="text-secondary-light mb-4">
+                        <p className={`
+                          mb-4
+                          ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                        `}>
                           {post.excerpt}
                         </p>
-                        {/* Actions de l'article */}
-                        <div className="flex items-center justify-between">
-                          {/* Lien vers l'article complet */}
-                          <Link
-                            to={`/blog/${post.slug}`}
-                            className="inline-flex items-center text-primary hover:text-primary-dark transition-colors"
-                          >
-                            Lire la suite
-                            <ChevronRight className="w-4 h-4 ml-1" />
-                          </Link>
-                          {/* Boutons de partage */}
-                          <ShareButtons
-                            url={`${window.location.origin}/blog/${post.slug}`}
-                            title={post.title}
-                          />
-                        </div>
+                        {/* Lien de lecture */}
+                        <Link
+                          to={`/blog/${post.slug}`}
+                          className={`
+                            inline-flex items-center font-medium
+                            ${theme === 'dark' 
+                              ? 'text-primary-light hover:text-primary' 
+                              : 'text-primary hover:text-primary-dark'}
+                          `}
+                        >
+                          Lire l'article
+                          <ChevronRight className="w-4 h-4 ml-1" />
+                        </Link>
                       </div>
                     </motion.article>
                   ))}
                 </motion.div>
 
                 {/* Pagination */}
-                {filteredPosts.length > ITEMS_PER_PAGE && (
-                  <div className="mt-8">
-                    <Pagination
+                {totalPages > 1 && (
+                  <div className="mt-8 flex justify-center">
+                    <Pagination 
                       currentPage={currentPage}
                       totalPages={totalPages}
                       onPageChange={setCurrentPage}
+                      theme={theme}
                     />
                   </div>
                 )}
               </>
             )}
+
+            {/* Message si aucun article ne correspond */}
+            {!isLoading && paginatedPosts.length === 0 && (
+              <p className={`
+                text-center mt-12 text-xl
+                ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+              `}>
+                Aucun article ne correspond à vos critères.
+              </p>
+            )}
           </div>
 
-          {/* Sidebar avec catégories populaires */}
-          <div className="hidden lg:block">
-            <PopularCategories
+          {/* Sidebar des catégories populaires */}
+          <div className="lg:col-span-1">
+            <PopularCategories 
               categories={popularCategories}
               selectedCategories={selectedCategories}
               onCategoryClick={handleCategoryClick}
+              theme={theme}
             />
           </div>
         </div>

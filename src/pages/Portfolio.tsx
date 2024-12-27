@@ -17,6 +17,7 @@ import useViewPreferences from "../hooks/useViewPreferences";
 // Données statiques des projets
 import { projects } from "../data/projects";
 import { Button } from "../components/ui/button";
+import { useTheme } from "@/components/theme-provider";  // Ajout du hook de thème
 
 // Nombre de projets affichés par page
 const ITEMS_PER_PAGE = 6;
@@ -30,6 +31,9 @@ const Portfolio = () => {
   // États de chargement et de pagination
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Récupération du thème actuel
+  const { theme } = useTheme();
   
   // Hook de gestion des préférences de vue
   const { 
@@ -74,7 +78,12 @@ const Portfolio = () => {
 
   return (
     // Conteneur principal avec dégradé de fond
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className={`
+      min-h-screen 
+      ${theme === 'dark' 
+        ? 'bg-gradient-to-b from-secondary-dark/50 to-secondary-dark/20' 
+        : 'bg-gradient-to-b from-white to-gray-50'}
+    `}>
       <Navbar />
       <div className="container mx-auto px-4 py-20">
         {/* Titre animé de la section */}
@@ -83,10 +92,16 @@ const Portfolio = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-4xl font-bold text-secondary-dark mb-4">
+          <h1 className={`
+            text-4xl font-bold mb-4
+            ${theme === 'dark' ? 'text-white' : 'text-secondary-dark'}
+          `}>
             Portfolio
           </h1>
-          <p className="text-secondary-light max-w-2xl mx-auto">
+          <p className={`
+            max-w-2xl mx-auto
+            ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+          `}>
             Découvrez mes projets et réalisations dans le développement web.
           </p>
         </motion.div>
@@ -104,7 +119,10 @@ const Portfolio = () => {
         {/* Message si aucun projet ne correspond aux filtres */}
         {!isLoading && filteredProjects.length === 0 && (
           <motion.p
-            className="text-center text-secondary-light mt-8"
+            className={`
+              text-center mt-8
+              ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+            `}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
@@ -134,22 +152,37 @@ const Portfolio = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col"
+                  className={`
+                    rounded-xl shadow-sm overflow-hidden hover:shadow-lg 
+                    transition-shadow duration-300 flex flex-col
+                    ${theme === 'dark' 
+                      ? 'bg-secondary-dark/10 border border-secondary-dark/20' 
+                      : 'bg-white'}
+                  `}
                 >
                   {/* Image du projet */}
                   <div className="relative">
                     <img
                       src={project.image}
                       alt={project.title}
-                      className="w-full h-48 object-cover"
+                      className={`
+                        w-full h-48 object-cover
+                        ${theme === 'dark' ? 'opacity-80' : 'opacity-100'}
+                      `}
                     />
                   </div>
                   {/* Détails du projet */}
                   <div className="p-6 flex-1 flex flex-col">
-                    <h2 className="text-xl font-semibold text-secondary-dark mb-2">
+                    <h2 className={`
+                      text-xl font-semibold mb-2
+                      ${theme === 'dark' ? 'text-white' : 'text-secondary-dark'}
+                    `}>
                       {project.title}
                     </h2>
-                    <p className="text-secondary-light mb-4">
+                    <p className={`
+                      mb-4
+                      ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                    `}>
                       {project.description}
                     </p>
                     {/* Technologies utilisées */}
@@ -157,7 +190,12 @@ const Portfolio = () => {
                       {project.technologies.map((tech) => (
                         <span
                           key={tech}
-                          className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                          className={`
+                            px-3 py-1 rounded-full text-sm
+                            ${theme === 'dark' 
+                              ? 'bg-primary-dark/20 text-primary-light' 
+                              : 'bg-primary/10 text-primary'}
+                          `}
                         >
                           {tech}
                         </span>
@@ -169,7 +207,13 @@ const Portfolio = () => {
                         href={project.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center flex-1 gap-2 px-4 py-2 text-primary hover:bg-primary hover:text-white border border-primary rounded-full transition-colors"
+                        className={`
+                          flex items-center justify-center flex-1 gap-2 
+                          px-4 py-2 border rounded-full transition-colors
+                          ${theme === 'dark' 
+                            ? 'text-primary-light border-primary-light hover:bg-primary-light hover:text-secondary-dark' 
+                            : 'text-primary border-primary hover:bg-primary hover:text-white'}
+                        `}
                       >
                         <ExternalLink className="w-4 h-4" />
                         Voir le projet
@@ -178,7 +222,13 @@ const Portfolio = () => {
                         href={project.github}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center flex-1 gap-2 px-4 py-2 text-secondary hover:bg-secondary hover:text-white border border-secondary rounded-full transition-colors"
+                        className={`
+                          flex items-center justify-center flex-1 gap-2 
+                          px-4 py-2 border rounded-full transition-colors
+                          ${theme === 'dark' 
+                            ? 'text-secondary-light border-secondary-light hover:bg-secondary-light hover:text-secondary-dark' 
+                            : 'text-secondary border-secondary hover:bg-secondary hover:text-white'}
+                        `}
                       >
                         <Github className="w-4 h-4" />
                         Code source
@@ -200,28 +250,48 @@ const Portfolio = () => {
               size="icon"
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
+              className={`
+                ${theme === 'dark' 
+                  ? 'text-white border-secondary-light hover:bg-secondary-light/10' 
+                  : 'text-secondary-dark border-secondary hover:bg-secondary/10'}
+              `}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="w-4 h-4" />
             </Button>
-            {/* Boutons de numéros de page */}
+
+            {/* Numéros de page */}
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <Button
                 key={page}
                 variant={currentPage === page ? "default" : "outline"}
                 onClick={() => setCurrentPage(page)}
-                className="w-10"
+                className={`
+                  ${currentPage === page 
+                    ? (theme === 'dark' 
+                      ? 'bg-primary-light text-secondary-dark' 
+                      : 'bg-primary text-white') 
+                    : (theme === 'dark' 
+                      ? 'text-white border-secondary-light hover:bg-secondary-light/10' 
+                      : 'text-secondary-dark border-secondary hover:bg-secondary/10')}
+                `}
               >
                 {page}
               </Button>
             ))}
+
             {/* Bouton page suivante */}
             <Button
               variant="outline"
               size="icon"
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
+              className={`
+                ${theme === 'dark' 
+                  ? 'text-white border-secondary-light hover:bg-secondary-light/10' 
+                  : 'text-secondary-dark border-secondary hover:bg-secondary/10'}
+              `}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         )}
