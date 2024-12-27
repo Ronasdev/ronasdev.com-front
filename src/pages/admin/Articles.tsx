@@ -134,15 +134,32 @@ const ArticlesAdminPage: React.FC = () => {
     }, [page]); 
 
     /**
-     * Filtre les articles en fonction de la recherche
-     * Permet de filtrer par titre ou extrait
+     * Permet de filtrer par titre ou catégories
      */
     const filteredArticles = useMemo(() => {
-        return state.articles?.filter(article => 
-            (article?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            article?.excerpt?.toLowerCase().includes(searchQuery.toLowerCase()))
-        );
+        if (!searchQuery) return state.articles || [];
+
+        const normalizedQuery = searchQuery.toLowerCase().trim();
+
+        return (state.articles || []).filter(article => {
+            // Vérification du titre
+            const titleMatch = article?.title?.toLowerCase().includes(normalizedQuery) || false;
+
+            // Vérification des catégories
+            const categoryMatch = (article?.categories || [])
+                .some(category => 
+                    category?.name?.toLowerCase().includes(normalizedQuery) || false
+                );
+
+            return titleMatch || categoryMatch;
+        });
     }, [state.articles, searchQuery]);
+
+    // Méthode de recherche
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const query = e.target.value;
+        setSearchQuery(query);
+    };
 
     // Méthode pour ouvrir le modal de création/édition d'article
     const handleEditArticle = (article?: Article) => {
@@ -286,8 +303,26 @@ const ArticlesAdminPage: React.FC = () => {
     return (
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold">Gestion des Articles</h1>
+                <h1 className="text-2xl font-bold">
+                    Gestion des Articles 
+                    <span className="text-sm text-gray-500 ml-3">
+                        ({totalArticles} articles disponibles)
+                    </span>
+                </h1>
                 <div className="flex space-x-4">
+                    {/* Barre de recherche */}
+                    <div className="relative flex-grow max-w-md">
+                        <input 
+                            type="text" 
+                            placeholder="Rechercher un article..." 
+                            value={searchQuery}
+                            onChange={handleSearch}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#49D6A2] transition-all"
+                        />
+                        <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    </div>
+
+                    {/* Boutons de création */}
                     <Button 
                         onClick={() => setState(prev => ({ 
                             ...prev, 
@@ -310,13 +345,18 @@ const ArticlesAdminPage: React.FC = () => {
             </div>
 
             {/* Liste des articles */}
-            {state.articles.length === 0 ? (
+            {filteredArticles.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
                     Aucun article trouvé
+                    {searchQuery && (
+                        <p className="mt-2 text-sm">
+                            Aucun résultat pour la recherche "{searchQuery}"
+                        </p>
+                    )}
                 </div>
             ) : (
                 <div className="grid gap-4">
-                    {state.articles.map(article => (
+                    {filteredArticles.map(article => (
                         <div 
                             key={article.id} 
                             className="border rounded-lg p-4 flex justify-between items-center"
@@ -324,7 +364,7 @@ const ArticlesAdminPage: React.FC = () => {
                             <div>
                                 <h2 className="text-lg font-semibold">{article.title}</h2>
                                 <p className="text-sm text-gray-500">
-                                    {article.categories || 'Aucune catégorie'}
+                                    {article.categories?.map(cat => cat.name).join(', ') || 'Aucune catégorie'}
                                 </p>
                             </div>
                             <div className="flex space-x-2">
