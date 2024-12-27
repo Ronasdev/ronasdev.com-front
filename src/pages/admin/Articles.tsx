@@ -44,195 +44,240 @@ import categoryService, { Category } from '@/services/categoryService';
 // URL de base pour les images
 const API_URL = import.meta.env.VITE_API_URL;
 
+// Interface pour les états du composant
+interface ArticlesAdminState {
+    articles: Article[];
+    categories: Category[];
+    isLoading: boolean;
+    error: string | null;
+    selectedArticle: Partial<Article> | null;
+    selectedCategories: number[];
+    featuredImage: File | null;
+    newCategory: Partial<Category>;
+    isCategoryModalOpen: boolean;
+    isArticleModalOpen: boolean;
+}
+
 /**
  * Page d'administration des articles
  * Permet de gérer la liste des articles, leur création, modification et suppression
  */
 const ArticlesAdminPage: React.FC = () => {
-    // États pour la gestion des articles et catégories
-    const [articles, setArticles] = useState<Article[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
-    
+    // État initial du composant
+    const [state, setState] = useState<ArticlesAdminState>({
+        articles: [],
+        categories: [],
+        isLoading: true,
+        error: null,
+        selectedArticle: null,
+        selectedCategories: [],
+        featuredImage: null,
+        newCategory: { name: '', description: '' },
+        isCategoryModalOpen: false,
+        isArticleModalOpen: false
+    });
+
     // États pour la pagination et la recherche
     const [totalArticles, setTotalArticles] = useState(0);
     const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
 
-    // États pour la sélection et le formulaire d'article
-    const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-    const [articleForm, setArticleForm] = useState<Partial<Article>>({
-        title: '',
-        content: '',
-        excerpt: '',
-        status: 'draft',
-        category_ids: '',
-        featured_image: null
-    });
-
-    // États pour la gestion des catégories et images
-    const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
-    const [featuredImage, setFeaturedImage] = useState<File | null>(null);
-
-    // États pour les modaux
-    const [newCategory, setNewCategory] = useState<Partial<Category>>({
-        name: '',
-        description: ''
-    });
-    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-
-    /**
-     * Charge la liste des articles
-     * Récupère les articles depuis l'API avec pagination
-     */
-    const fetchArticles = async () => {
-        setIsLoading(true);
-        try {
-            const response = await articleService.getAllArticles(page);
-            setArticles(response);
-            setTotalArticles(response.length);
-        } catch (error) {
-            toast.error('Impossible de charger les articles', {
-                description: error instanceof Error ? error.message : 'Une erreur est survenue'
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    /**
-     * Charge la liste des catégories
-     * Récupère toutes les catégories depuis l'API
-     */
-    const fetchCategories = async () => {
-        try {
-            const response = await categoryService.getAllCategories();
-            console.log("Catégories chargées: ", response);
-            setCategories(response);
-        } catch (error) {
-            toast.error('Impossible de charger les catégories', {
-                description: error instanceof Error ? error.message : 'Une erreur est survenue'
-            });
-        }
-    };
-
-    // Effet pour charger les articles et catégories au montage et lors du changement de page
+    // Effet pour charger les articles et catégories au montage du composant
     useEffect(() => {
-        fetchArticles();
-        fetchCategories();
-    }, [page]);
+        const fetchInitialData = async () => {
+            // Réinitialiser l'état de chargement et d'erreur
+            setState(prev => ({ 
+                ...prev, 
+                isLoading: true, 
+                error: null 
+            }));
+
+            try {
+                // Charger les articles
+                const articlesResponse = await articleService.getAllArticles(page);
+                
+                // Charger les catégories
+                const categoriesResponse = await categoryService.getAllCategories();
+
+                // Mettre à jour l'état avec les données
+                setState(prev => ({
+                    ...prev,
+                    articles: articlesResponse || [],
+                    categories: categoriesResponse || [],
+                    isLoading: false,
+                    error: null
+                }));
+                setTotalArticles(articlesResponse.length);
+            } catch (error) {
+                // Gestion détaillée des erreurs
+                const errorMessage = error instanceof Error 
+                    ? error.message 
+                    : 'Impossible de charger les données';
+
+                setState(prev => ({
+                    ...prev,
+                    isLoading: false,
+                    error: errorMessage,
+                    articles: [],
+                    categories: []
+                }));
+
+                toast.error('Erreur de chargement', {
+                    description: errorMessage
+                });
+
+                console.error('Erreur de chargement des données:', error);
+            }
+        };
+
+        fetchInitialData();
+    }, [page]); 
 
     /**
      * Filtre les articles en fonction de la recherche
      * Permet de filtrer par titre ou extrait
      */
     const filteredArticles = useMemo(() => {
-        return articles?.filter(article => 
+        return state.articles?.filter(article => 
             (article?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             article?.excerpt?.toLowerCase().includes(searchQuery.toLowerCase()))
         );
-    }, [articles, searchQuery]);
+    }, [state.articles, searchQuery]);
 
-    /**
-     * Gère le téléchargement de l'image à la une
-     * @param event - Événement de changement de fichier
-     */
-    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Méthode pour ouvrir le modal de création/édition d'article
+    const handleEditArticle = (article?: Article) => {
+        setState(prev => ({
+            ...prev,
+            selectedArticle: article || null,
+            selectedCategories: article?.category_ids 
+                ? article.category_ids.split(',').map(Number) 
+                : [],
+            isArticleModalOpen: true
+        }));
+    };
+
+    // Méthode pour gérer le téléchargement de l'image
+    const handleFeaturedImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            setFeaturedImage(file);
+            setState(prev => ({ 
+                ...prev, 
+                featuredImage: file 
+            }));
+
             try {
                 const imageUrl = await articleService.uploadImage(file);
-                setArticleForm(prev => ({ ...prev, featured_image: imageUrl }));
+                setState(prev => ({
+                    ...prev,
+                    selectedArticle: {
+                        ...prev.selectedArticle,
+                        featured_image: imageUrl
+                    }
+                }));
             } catch (error) {
                 toast.error('Échec du téléchargement de l\'image');
             }
         }
     };
 
-    /**
-     * Soumet le formulaire d'article (création ou modification)
-     * Gère l'enregistrement des articles avec leurs catégories
-     */
-    const handleSubmit = async () => {
-        try {
-            const formData: Partial<Article> = {
-                ...articleForm,
-                category_ids: selectedCategories.join(',')
-            };
+    // Méthode pour sélectionner/désélectionner les catégories
+    const handleCategorySelect = (categoryId: number) => {
+        setState(prev => ({
+            ...prev,
+            selectedCategories: prev.selectedCategories.includes(categoryId)
+                ? prev.selectedCategories.filter(id => id !== categoryId)
+                : [...prev.selectedCategories, categoryId]
+        }));
+    };
 
-            if (selectedArticle) {
-                await articleService.updateArticle(selectedArticle.id!, formData);
-                toast.success('Article mis à jour avec succès');
-            } else {
-                await articleService.createArticle(formData);
-                toast.success('Article créé avec succès');
+    // Méthode pour créer/mettre à jour un article
+    const handleSaveArticle = async () => {
+        try {
+            const { selectedArticle, selectedCategories, featuredImage } = state;
+
+            if (!selectedArticle?.title || !selectedArticle.content) {
+                toast.error('Champs obligatoires manquants');
+                return;
             }
 
-            fetchArticles();
-            setSelectedArticle(null);
-            setArticleForm({});
-            setSelectedCategories([]);
+            const articleData = {
+                ...selectedArticle,
+                category_ids: selectedCategories.join(','),
+                featured_image: featuredImage
+            };
+
+            let savedArticle: Article;
+            if (selectedArticle.id) {
+                // Mise à jour
+                savedArticle = await articleService.updateArticle(selectedArticle.id, articleData);
+            } else {
+                // Création
+                savedArticle = await articleService.createArticle(articleData);
+            }
+
+            // Mettre à jour la liste des articles
+            setState(prev => ({
+                ...prev,
+                articles: selectedArticle.id 
+                    ? prev.articles.map(a => a.id === savedArticle.id ? savedArticle : a)
+                    : [...prev.articles, savedArticle],
+                isArticleModalOpen: false,
+                selectedArticle: null,
+                selectedCategories: [],
+                featuredImage: null
+            }));
+
+            toast.success(selectedArticle.id ? 'Article mis à jour' : 'Article créé');
         } catch (error) {
-            toast.error('Erreur lors de l\'enregistrement', {
+            toast.error('Erreur de sauvegarde', {
                 description: error instanceof Error ? error.message : 'Une erreur est survenue'
             });
         }
     };
 
-    /**
-     * Supprime un article
-     * @param id - Identifiant de l'article à supprimer
-     */
-    const handleDelete = async (id: number) => {
+    // Méthode pour supprimer un article
+    const handleDeleteArticle = async (articleId: number) => {
         try {
-            await articleService.deleteArticle(id);
+            await articleService.deleteArticle(articleId);
+            
+            setState(prev => ({
+                ...prev,
+                articles: prev.articles.filter(article => article.id !== articleId)
+            }));
+
             toast.success('Article supprimé avec succès');
-            fetchArticles();
         } catch (error) {
-            toast.error('Impossible de supprimer l\'article', {
+            toast.error('Suppression impossible', {
                 description: error instanceof Error ? error.message : 'Une erreur est survenue'
             });
         }
     };
 
-    /**
-     * Sélectionne ou désélectionne une catégorie
-     * @param categoryId - Identifiant de la catégorie
-     */
-    const handleCategorySelect = (categoryId: number) => {
-        setSelectedCategories(prev => 
-            prev.includes(categoryId) 
-                ? prev.filter(id => id !== categoryId)
-                : [...prev, categoryId]
-        );
-    };
-
-    /**
-     * Crée une nouvelle catégorie
-     */
+    // Méthode pour créer une nouvelle catégorie
     const handleCreateCategory = async () => {
-        if (!newCategory.name) {
-            toast.error('Le nom de la catégorie est obligatoire');
-            return;
-        }
-
         try {
+            const { newCategory } = state;
+
+            if (!newCategory.name) {
+                toast.error('Le nom de la catégorie est obligatoire');
+                return;
+            }
+
             const createdCategory = await categoryService.createCategory({
                 name: newCategory.name,
                 description: newCategory.description
             });
 
-            // Mettre à jour la liste des catégories
-            setCategories(prev => [...prev, createdCategory]);
-            
-            // Réinitialiser le formulaire
-            setNewCategory({ name: '', description: '' });
-            setIsCategoryModalOpen(false);
+            setState(prev => ({
+                ...prev,
+                categories: [...prev.categories, createdCategory],
+                newCategory: { name: '', description: '' },
+                isCategoryModalOpen: false
+            }));
 
             toast.success('Catégorie créée avec succès');
         } catch (error) {
-            toast.error('Impossible de créer la catégorie', {
+            toast.error('Création impossible', {
                 description: error instanceof Error ? error.message : 'Une erreur est survenue'
             });
         }
@@ -241,227 +286,326 @@ const ArticlesAdminPage: React.FC = () => {
     return (
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-bold">Gestion des Articles</h1>
-                    <p className="text-muted-foreground">
-                        Total d'articles : {totalArticles}
-                    </p>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                    <div className="relative">
-                        <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                        <Input 
-                            placeholder="Rechercher un article" 
-                            className="pl-10 w-64"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button onClick={() => {
-                                setSelectedArticle(null);
-                                setArticleForm({});
-                                setSelectedCategories([]);
-                            }}>
-                                <FaPlus className="mr-2" /> Nouvel Article
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[800px]">
-                            {/* Contenu du modal de création/édition d'article */}
-                            <DialogHeader>
-                                <DialogTitle>
-                                    {selectedArticle ? 'Modifier l\'Article' : 'Créer un Nouvel Article'}
-                                </DialogTitle>
-                                <DialogDescription>
-                                    Remplissez tous les champs pour {selectedArticle ? 'mettre à jour' : 'créer'} un article.
-                                </DialogDescription>
-                            </DialogHeader>
-
-                            {/* Formulaire de l'article */}
-                            <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="title" className="text-right">Titre</Label>
-                                    <Input 
-                                        id="title" 
-                                        value={articleForm.title || ''} 
-                                        onChange={(e) => setArticleForm(prev => ({ 
-                                            ...prev, 
-                                            title: e.target.value 
-                                        }))}
-                                        className="col-span-3" 
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="content" className="text-right">Contenu</Label>
-                                    <Textarea 
-                                        id="content" 
-                                        value={articleForm.content || ''} 
-                                        onChange={(e) => setArticleForm(prev => ({ 
-                                            ...prev, 
-                                            content: e.target.value 
-                                        }))}
-                                        className="col-span-3 h-48" 
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="categories" className="text-right">Catégories</Label>
-                                    <div className="col-span-3 flex flex-wrap gap-2">
-                                        {categories?.map(category => (
-                                            <Button 
-                                                key={category.id} 
-                                                variant={selectedCategories.includes(category.id!) ? 'default' : 'outline'}
-                                                onClick={() => handleCategorySelect(category.id!)}
-                                                className="cursor-pointer"
-                                            >
-                                                {category.name}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <DialogFooter>
-                                <Button type="submit" onClick={handleSubmit}>
-                                    {selectedArticle ? 'Mettre à jour' : 'Créer'}
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-
-                    {/* Modal de création de catégorie */}
-                    <Dialog open={isCategoryModalOpen} onOpenChange={setIsCategoryModalOpen}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Créer une Nouvelle Catégorie</DialogTitle>
-                                <DialogDescription>
-                                    Ajoutez une nouvelle catégorie pour vos articles
-                                </DialogDescription>
-                            </DialogHeader>
-                            
-                            {/* Formulaire de création de catégorie */}
-                            <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="categoryName" className="text-right">
-                                        Nom de la Catégorie
-                                    </Label>
-                                    <Input 
-                                        id="categoryName"
-                                        value={newCategory.name || ''}
-                                        onChange={(e) => setNewCategory(prev => ({ 
-                                            ...prev, 
-                                            name: e.target.value 
-                                        }))}
-                                        className="col-span-3"
-                                        placeholder="Ex: Développement Web"
-                                    />
-                                </div>
-                                
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="categoryDescription" className="text-right">
-                                        Description
-                                    </Label>
-                                    <Textarea 
-                                        id="categoryDescription"
-                                        value={newCategory.description || ''}
-                                        onChange={(e) => setNewCategory(prev => ({ 
-                                            ...prev, 
-                                            description: e.target.value 
-                                        }))}
-                                        className="col-span-3"
-                                        placeholder="Description optionnelle de la catégorie"
-                                    />
-                                </div>
-                            </div>
-
-                            <DialogFooter>
-                                <Button 
-                                    type="submit" 
-                                    onClick={handleCreateCategory}
-                                >
-                                    Créer la Catégorie
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                <h1 className="text-2xl font-bold">Gestion des Articles</h1>
+                <div className="flex space-x-4">
+                    <Button 
+                        onClick={() => setState(prev => ({ 
+                            ...prev, 
+                            isArticleModalOpen: true, 
+                            selectedArticle: null 
+                        }))}
+                    >
+                        <FaPlus className="mr-2" /> Nouvel Article
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        onClick={() => setState(prev => ({ 
+                            ...prev, 
+                            isCategoryModalOpen: true 
+                        }))}
+                    >
+                        <FaPlus className="mr-2" /> Nouvelle Catégorie
+                    </Button>
                 </div>
             </div>
 
-            {/* Tableau des articles */}
-            <Table>
-                <TableCaption>Liste des articles</TableCaption>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Titre</TableHead>
-                        <TableHead>Statut</TableHead>
-                        <TableHead>Catégories</TableHead>
-                        <TableHead>Date de Création</TableHead>
-                        <TableHead>Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {filteredArticles?.map(article => (
-                        <TableRow key={article.id}>
-                            <TableCell>{article.title}</TableCell>
-                            <TableCell>
-                                <Badge 
-                                    variant={
-                                        article.status === 'draft' ? 'secondary' :
-                                        article.status === 'published' ? 'default' :
-                                        'destructive'
-                                    }
+            {/* Liste des articles */}
+            {state.articles.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                    Aucun article trouvé
+                </div>
+            ) : (
+                <div className="grid gap-4">
+                    {state.articles.map(article => (
+                        <div 
+                            key={article.id} 
+                            className="border rounded-lg p-4 flex justify-between items-center"
+                        >
+                            <div>
+                                <h2 className="text-lg font-semibold">{article.title}</h2>
+                                <p className="text-sm text-gray-500">
+                                    {article.categories || 'Aucune catégorie'}
+                                </p>
+                            </div>
+                            <div className="flex space-x-2">
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setState(prev => ({
+                                        ...prev,
+                                        selectedArticle: { ...article },
+                                        selectedCategories: article.category_ids 
+                                            ? article.category_ids.split(',').map(Number) 
+                                            : [],
+                                        isArticleModalOpen: true
+                                    }))}
                                 >
-                                    {article.status === 'draft' ? 'Brouillon' :
-                                     article.status === 'published' ? 'Publié' :
-                                     'Archivé'}
-                                </Badge>
-                            </TableCell>
-                            <TableCell>
-                                {article.categories || 'Aucune catégorie'}
-                            </TableCell>
-                            <TableCell>
-                                {new Date(article.created_at || '').toLocaleDateString()}
-                            </TableCell>
-                            <TableCell>
-                                <div className="flex space-x-2">
-                                    <Button 
-                                        size="sm" 
-                                        variant="outline"
-                                        onClick={() => {
-                                            setSelectedArticle(article);
-                                            setArticleForm({
-                                                title: article.title,
-                                                content: article.content,
-                                                excerpt: article.excerpt,
-                                                status: article.status,
-                                                featured_image: article.featured_image
-                                            });
-                                            setSelectedCategories(
-                                                article.category_ids 
-                                                    ? article.category_ids.split(',').map(Number) 
-                                                    : []
-                                            );
-                                        }}
-                                    >
-                                        <FaEdit />
-                                    </Button>
-                                    <Button 
-                                        size="sm" 
-                                        variant="destructive"
-                                        onClick={() => handleDelete(article.id!)}
-                                    >
-                                        <FaTrash />
-                                    </Button>
-                                </div>
-                            </TableCell>
-                        </TableRow>
+                                    <FaEdit className="mr-2" /> Modifier
+                                </Button>
+                                <Button 
+                                    variant="destructive" 
+                                    size="sm" 
+                                    onClick={() => {
+                                        const confirmDelete = window.confirm('Voulez-vous vraiment supprimer cet article ?');
+                                        if (confirmDelete) {
+                                            handleDeleteArticle(article.id!);
+                                        }
+                                    }}
+                                >
+                                    <FaTrash className="mr-2" /> Supprimer
+                                </Button>
+                            </div>
+                        </div>
                     ))}
-                </TableBody>
-            </Table>
+                </div>
+            )}
+
+            {/* Modal de création/édition d'article */}
+            <Dialog 
+                open={state.isArticleModalOpen} 
+                onOpenChange={() => setState(prev => ({ 
+                    ...prev, 
+                    isArticleModalOpen: false, 
+                    selectedArticle: null 
+                }))}
+            >
+                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
+                        <DialogTitle className="text-2xl font-bold text-gray-800">
+                            {state.selectedArticle ? 'Modifier l\'Article' : 'Créer un Nouvel Article'}
+                        </DialogTitle>
+                        <DialogDescription className="text-gray-500">
+                            Remplissez tous les champs pour {state.selectedArticle ? 'mettre à jour' : 'créer'} un article.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-6 py-4 px-2">
+                        {/* Champs de titre avec design amélioré */}
+                        <div className="space-y-2">
+                            <Label htmlFor="title" className="text-sm font-medium text-gray-700">Titre de l'Article</Label>
+                            <Input 
+                                id="title" 
+                                value={state.selectedArticle?.title || ''} 
+                                onChange={(e) => setState(prev => ({ 
+                                    ...prev, 
+                                    selectedArticle: { 
+                                        ...prev.selectedArticle, 
+                                        title: e.target.value 
+                                    } 
+                                }))}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#49D6A2] transition-all" 
+                                placeholder="Entrez le titre de votre article"
+                            />
+                        </div>
+
+                        {/* Champs de contenu avec design amélioré */}
+                        <div className="space-y-2">
+                            <Label htmlFor="content" className="text-sm font-medium text-gray-700">Contenu de l'Article</Label>
+                            <Textarea 
+                                id="content" 
+                                value={state.selectedArticle?.content || ''} 
+                                onChange={(e) => setState(prev => ({ 
+                                    ...prev, 
+                                    selectedArticle: { 
+                                        ...prev.selectedArticle, 
+                                        content: e.target.value 
+                                    } 
+                                }))}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md min-h-[200px] focus:ring-2 focus:ring-[#49D6A2] transition-all" 
+                                placeholder="Rédigez le contenu de votre article..."
+                            />
+                        </div>
+
+                        {/* Champs d'extrait avec design amélioré */}
+                        <div className="space-y-2">
+                            <Label htmlFor="excerpt" className="text-sm font-medium text-gray-700">Extrait</Label>
+                            <Textarea 
+                                id="excerpt" 
+                                value={state.selectedArticle?.excerpt || ''} 
+                                onChange={(e) => setState(prev => ({ 
+                                    ...prev, 
+                                    selectedArticle: { 
+                                        ...prev.selectedArticle, 
+                                        excerpt: e.target.value 
+                                    } 
+                                }))}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md min-h-[100px] focus:ring-2 focus:ring-[#49D6A2] transition-all" 
+                                placeholder="Un court résumé de l'article (optionnel)"
+                            />
+                        </div>
+
+                        {/* Sélection du statut avec design amélioré */}
+                        <div className="space-y-2">
+                            <Label htmlFor="status" className="text-sm font-medium text-gray-700">Statut de l'Article</Label>
+                            <Select
+                                value={state.selectedArticle?.status || 'draft'}
+                                onValueChange={(value) => setState(prev => ({ 
+                                    ...prev, 
+                                    selectedArticle: { 
+                                        ...prev.selectedArticle, 
+                                        status: value as 'draft' | 'published' | 'archived'
+                                    } 
+                                }))}
+                            >
+                                <SelectTrigger className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#49D6A2]">
+                                    <SelectValue placeholder="Sélectionnez un statut" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="draft" className="hover:bg-gray-100">Brouillon</SelectItem>
+                                    <SelectItem value="published" className="hover:bg-gray-100">Publié</SelectItem>
+                                    <SelectItem value="archived" className="hover:bg-gray-100">Archivé</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Téléchargement de l'image à la une avec design moderne */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Image à la Une</Label>
+                            <div className="flex items-center space-x-4 w-full">
+                                <div className="flex-grow">
+                                    <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#49D6A2] transition-all">
+                                        <input 
+                                            type="file" 
+                                            accept="image/*"
+                                            onChange={handleFeaturedImageUpload}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        />
+                                        <div className="flex flex-col items-center justify-center">
+                                            <FaFileImage className="text-3xl text-gray-400 mb-2" />
+                                            <p className="text-sm text-gray-500">
+                                                {state.featuredImage 
+                                                    ? state.featuredImage.name 
+                                                    : 'Glissez et déposez ou cliquez pour télécharger'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {state.selectedArticle?.featured_image && (
+                                    <div className="relative group">
+                                        <img 
+                                            src={state.selectedArticle.featured_image} 
+                                            alt="Image à la une" 
+                                            className="w-32 h-32 object-cover rounded-lg shadow-md group-hover:opacity-75 transition-opacity"
+                                        />
+                                        <button 
+                                            onClick={() => setState(prev => ({
+                                                ...prev,
+                                                selectedArticle: {
+                                                    ...prev.selectedArticle,
+                                                    featured_image: undefined
+                                                }
+                                            }))}
+                                            className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Sélection des catégories avec design amélioré */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Catégories</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {state.categories?.map(category => (
+                                    <button
+                                        key={category.id}
+                                        type="button"
+                                        onClick={() => handleCategorySelect(category.id!)}
+                                        className={`
+                                            px-3 py-1 rounded-full text-sm transition-all
+                                            ${state.selectedCategories.includes(category.id!) 
+                                                ? 'bg-[#49D6A2] text-white' 
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}
+                                        `}
+                                    >
+                                        {category.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="sticky bottom-0 bg-white z-10 pt-4 border-t">
+                        <Button 
+                            type="submit" 
+                            onClick={handleSaveArticle}
+                            className="w-full bg-[#49D6A2] hover:bg-[#3ac48c] text-white font-bold py-2 rounded-md transition-colors"
+                        >
+                            {state.selectedArticle ? 'Mettre à jour' : 'Créer'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal de création de catégorie */}
+            <Dialog 
+                open={state.isCategoryModalOpen} 
+                onOpenChange={() => setState(prev => ({ 
+                    ...prev, 
+                    isCategoryModalOpen: false, 
+                    newCategory: { name: '', description: '' } 
+                }))}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Créer une Nouvelle Catégorie</DialogTitle>
+                        <DialogDescription>
+                            Ajoutez une nouvelle catégorie pour vos articles
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="categoryName" className="text-right">
+                                Nom de la Catégorie
+                            </Label>
+                            <Input 
+                                id="categoryName"
+                                value={state.newCategory.name || ''}
+                                onChange={(e) => setState(prev => ({ 
+                                    ...prev, 
+                                    newCategory: { 
+                                        ...prev.newCategory, 
+                                        name: e.target.value 
+                                    } 
+                                }))}
+                                className="col-span-3"
+                                placeholder="Ex: Développement Web"
+                            />
+                        </div>
+                        
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="categoryDescription" className="text-right">
+                                Description
+                            </Label>
+                            <Textarea 
+                                id="categoryDescription"
+                                value={state.newCategory.description || ''}
+                                onChange={(e) => setState(prev => ({ 
+                                    ...prev, 
+                                    newCategory: { 
+                                        ...prev.newCategory, 
+                                        description: e.target.value 
+                                    } 
+                                }))}
+                                className="col-span-3"
+                                placeholder="Description optionnelle de la catégorie"
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button 
+                            type="submit" 
+                            onClick={handleCreateCategory}
+                        >
+                            Créer la Catégorie
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
