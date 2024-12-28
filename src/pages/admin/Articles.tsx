@@ -148,7 +148,8 @@ const ArticlesAdminPage: React.FC = () => {
             // Vérification des catégories
             const categoryMatch = (article?.categories || [])
                 .some(category => 
-                    category?.name?.toLowerCase().includes(normalizedQuery) || false
+                    // category?.name?.toLowerCase().includes(normalizedQuery) || false
+                    category?.toLowerCase().includes(normalizedQuery) || false
                 );
 
             return titleMatch || categoryMatch;
@@ -184,6 +185,7 @@ const ArticlesAdminPage: React.FC = () => {
 
             try {
                 const imageUrl = await articleService.uploadImage(file);
+                console.log('Image telechargée avec url article.tsx: ', imageUrl);
                 setState(prev => ({
                     ...prev,
                     selectedArticle: {
@@ -212,16 +214,45 @@ const ArticlesAdminPage: React.FC = () => {
         try {
             const { selectedArticle, selectedCategories, featuredImage } = state;
 
-            if (!selectedArticle?.title || !selectedArticle.content) {
-                toast.error('Champs obligatoires manquants');
+            // Validation des champs obligatoires
+            if (!selectedArticle?.title) {
+                toast.error('Le titre est obligatoire');
                 return;
             }
 
-            const articleData = {
-                ...selectedArticle,
-                category_ids: selectedCategories.join(','),
-                featured_image: featuredImage
+            if (!selectedArticle.content) {
+                toast.error('Le contenu est obligatoire');
+                return;
+            }
+
+            // Préparation des données de l'article
+            const articleData: Partial<Article> = {
+                title: selectedArticle.title,
+                content: selectedArticle.content,
+                excerpt: selectedArticle.excerpt || '',
+                status: selectedArticle.status || 'draft',
             };
+
+            // Gestion des catégories
+            if (selectedCategories && selectedCategories.length > 0) {
+                articleData.category_ids = selectedCategories.join(',');
+            }
+
+            // Gestion de l'image
+            if (featuredImage instanceof File) {
+                try {
+                    // Télécharger l'image et récupérer son URL
+                    const imageUrl = await articleService.uploadImage(featuredImage);
+                    articleData.featured_image = imageUrl;
+                } catch (error) {
+                    toast.error('Erreur lors du téléchargement de l\'image');
+                    console.error('Image upload error:', error);
+                    return;
+                }
+            } else if (selectedArticle.featured_image) {
+                // Conserver l'image existante si présente
+                articleData.featured_image = selectedArticle.featured_image;
+            }
 
             let savedArticle: Article;
             if (selectedArticle.id) {
@@ -246,6 +277,7 @@ const ArticlesAdminPage: React.FC = () => {
 
             toast.success(selectedArticle.id ? 'Article mis à jour' : 'Article créé');
         } catch (error) {
+            console.error('Erreur de sauvegarde', error);
             toast.error('Erreur de sauvegarde', {
                 description: error instanceof Error ? error.message : 'Une erreur est survenue'
             });
@@ -355,48 +387,127 @@ const ArticlesAdminPage: React.FC = () => {
                     )}
                 </div>
             ) : (
-                <div className="grid gap-4">
-                    {filteredArticles.map(article => (
-                        <div 
-                            key={article.id} 
-                            className="border rounded-lg p-4 flex justify-between items-center"
-                        >
-                            <div>
-                                <h2 className="text-lg font-semibold">{article.title}</h2>
-                                <p className="text-sm text-gray-500">
-                                    {article.categories?.map(cat => cat.name).join(', ') || 'Aucune catégorie'}
-                                </p>
-                            </div>
-                            <div className="flex space-x-2">
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => setState(prev => ({
-                                        ...prev,
-                                        selectedArticle: { ...article },
-                                        selectedCategories: article.category_ids 
-                                            ? article.category_ids.split(',').map(Number) 
-                                            : [],
-                                        isArticleModalOpen: true
-                                    }))}
-                                >
-                                    <FaEdit className="mr-2" /> Modifier
-                                </Button>
-                                <Button 
-                                    variant="destructive" 
-                                    size="sm" 
-                                    onClick={() => {
-                                        const confirmDelete = window.confirm('Voulez-vous vraiment supprimer cet article ?');
-                                        if (confirmDelete) {
-                                            handleDeleteArticle(article.id!);
-                                        }
-                                    }}
-                                >
-                                    <FaTrash className="mr-2" /> Supprimer
-                                </Button>
-                            </div>
-                        </div>
-                    ))}
+                <div className="bg-white shadow-md rounded-lg overflow-hidden">
+                    <table className="w-full">
+                        <thead className="bg-gray-100 border-b">
+                            <tr>
+                                <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
+                                <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Catégories</th>
+                                <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                                <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de Création</th>
+                                <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image à la Une</th>
+                                <th className="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {filteredArticles?.map(article => (
+                                <tr key={article.id} className="hover:bg-gray-50 transition-colors">
+                                    {/* Titre */}
+                                    <td className="p-3">
+                                        <div className="flex items-center">
+                                            <div className="ml-4">
+                                                <div className="text-sm font-medium text-gray-900">
+                                                    {article.title}
+                                                </div>
+                                                <div className="text-sm text-gray-500 truncate max-w-[250px]">
+                                                    {article.excerpt || 'Pas d\'extrait'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    {/* Catégories */}
+                                    <td className="p-3">
+                                        <div className="flex flex-wrap gap-1">
+                                            {article.categories?.map(category => (
+                                                <span 
+                                                    // key={category.id} 
+                                                    key={category} 
+                                                    className="px-2 py-1 text-xs font-medium rounded-full bg-gray-200 text-gray-700"
+                                                >
+                                                    {/* {category.name} */}
+                                                    {category}
+                                                    <br />
+                                                </span>
+                                            )) || <span className="text-gray-500">Aucune</span>}
+                                        </div>
+                                    </td>
+
+                                    {/* Statut */}
+                                    <td className="p-3">
+                                        <span 
+                                            className={`
+                                                px-2 py-1 text-xs font-medium rounded-full
+                                                ${article.status === 'published' ? 'bg-green-100 text-green-800' : 
+                                                  article.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
+                                                  'bg-gray-100 text-gray-800'}
+                                            `}
+                                        >
+                                            {article.status === 'published' ? 'Publié' : 
+                                             article.status === 'draft' ? 'Brouillon' : 
+                                             'Archivé'}
+                                        </span>
+                                    </td>
+
+                                    {/* Date de Création */}
+                                    <td className="p-3 text-sm text-gray-500">
+                                        {new Date(article.created_at).toLocaleDateString('fr-FR', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })}
+                                    </td>
+
+                                    {/* Image à la Une */}
+                                    <td className="p-3">
+                                        {article.featured_image ? (
+                                            <img 
+                                                src={ API_URL + article.featured_image} 
+                                                alt="Image à la une" 
+                                                className="w-16 h-16 object-cover rounded-md"
+                                            />
+                                        ) : (
+                                            <span className="text-gray-500 text-sm">Pas d'image</span>
+                                        )}
+                                    </td>
+
+                                    {/* Actions */}
+                                    <td className="p-3 text-right">
+                                        <div className="flex justify-end space-x-2">
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                onClick={() => setState(prev => ({
+                                                    ...prev,
+                                                    selectedArticle: { ...article },
+                                                    selectedCategories: article.category_ids 
+                                                        ? article.category_ids.split(',').map(Number) 
+                                                        : [],
+                                                    isArticleModalOpen: true
+                                                }))}
+                                                className="hover:bg-gray-100"
+                                            >
+                                                <FaEdit className="mr-2" /> Modifier
+                                            </Button>
+                                            <Button 
+                                                variant="destructive" 
+                                                size="sm" 
+                                                onClick={() => {
+                                                    const confirmDelete = window.confirm('Voulez-vous vraiment supprimer cet article ?');
+                                                    if (confirmDelete) {
+                                                        handleDeleteArticle(article.id!);
+                                                    }
+                                                }}
+                                                className="hover:bg-red-100"
+                                            >
+                                                <FaTrash className="mr-2" /> Supprimer
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
 
@@ -523,7 +634,7 @@ const ArticlesAdminPage: React.FC = () => {
                                 {state.selectedArticle?.featured_image && (
                                     <div className="relative group">
                                         <img 
-                                            src={state.selectedArticle.featured_image} 
+                                            src={API_URL + state.selectedArticle.featured_image} 
                                             alt="Image à la une" 
                                             className="w-32 h-32 object-cover rounded-lg shadow-md group-hover:opacity-75 transition-opacity"
                                         />
@@ -535,7 +646,7 @@ const ArticlesAdminPage: React.FC = () => {
                                                     featured_image: undefined
                                                 }
                                             }))}
-                                            className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute z-50 top-0 right-0 bg-red-500 text-white rounded-full p-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
                                             ✕
                                         </button>

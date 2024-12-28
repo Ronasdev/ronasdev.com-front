@@ -18,8 +18,8 @@ export interface Article {
     status: 'draft' | 'published' | 'archived';
     author_id?: number;
     featured_image?: string | null;
-    categories?: number[];
-    category_ids?: string;
+    categories?: string[];
+    category_ids?: string;	
     categories_names?: string;
     created_at?: string;
     updated_at?: string;
@@ -68,15 +68,23 @@ export const articleService = {
             // Convertir les données en FormData
             Object.entries(data).forEach(([key, value]) => {
                 if (value !== undefined) {
+                    // Ajouter une condition pour ne pas ajouter l'image existante
+                    if (key === 'featured_image' && typeof value === 'string') {
+                        // Si c'est une URL, ne pas l'ajouter
+                        return;
+                    }
+
                     if (key === 'category_ids' && Array.isArray(value)) {
                         // Convertir les IDs de catégories en chaîne
                         formData.append(key, value.join(','));
+                    } else if (key === 'featured_image' && value instanceof File) {
+                        // Ajouter uniquement les nouveaux fichiers
+                        formData.append(key, value);
                     } else {
                         formData.append(key, value);
                     }
                 }
             });
-
 
             const response = await axios.post<{data: Article}>(`${API_URL}/articles`, formData, {
                 headers: { 
@@ -100,29 +108,68 @@ export const articleService = {
     async updateArticle(id: number, data: Partial<Article>): Promise<Article> {
         try {
             const token = localStorage.getItem('token');
-            const formData = new FormData();
             
-            // Convertir les données en FormData
-            Object.entries(data).forEach(([key, value]) => {
-                if (value !== undefined) {
-                    if (key === 'category_ids' && Array.isArray(value)) {
-                        // Convertir les IDs de catégories en chaîne
-                        formData.append(key, value.join(','));
-                    } else {
-                        formData.append(key, value);
-                    }
-                }
-            });
+            // Préparation des données
+            const updateData = {
+                title: data.title,
+                content: data.content,
+                excerpt: data.excerpt || '',
+                status: data.status || 'draft',
+                category_ids: data.category_ids,
+                featured_image: data.featured_image
+            };
 
-            const response = await axios.put<{data: Article}>(`${API_URL}/articles/${id}`, formData, {
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-            return response.data.data;
+            console.log("Données de mise à jour de l'article:", updateData);
+
+            // Si une nouvelle image est présente, utiliser FormData
+            if (data?.featured_image instanceof File) {
+                const formData = new FormData();
+                
+                // Ajouter tous les champs textuels
+                Object.entries(updateData).forEach(([key, value]) => {
+                    if (value !== undefined) {
+                        formData.append(key, value as string);
+                    }
+                });
+
+                // Ajouter le fichier image
+                formData.append('featured_image', data.featured_image);
+
+                const response = await axios.put<{data: Article}>(`${API_URL}/articles/${id}`, formData, {
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    },
+                    timeout: 10000
+                });
+
+                console.log("Réponse de mise à jour de l'article (image):", response.data);
+                return response.data.data;
+            } else {
+                // Requête standard pour les mises à jour sans image
+                const response = await axios.put<{data: Article}>(`${API_URL}/articles/${id}`, updateData, {
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 10000
+                });
+
+                console.log("Réponse de mise à jour de l'article:", response.data);
+                return response.data.data;
+            }
         } catch (error) {
-            console.error('Erreur lors de la mise à jour de l\'article', error);
+            console.error('Erreur détaillée lors de la mise à jour de l\'article', error);
+            
+            // Log plus détaillé des erreurs
+            if (axios.isAxiosError(error)) {
+                console.error('Détails de l\'erreur Axios:', {
+                    response: error.response?.data,
+                    status: error.response?.status,
+                    headers: error.response?.headers
+                });
+            }
+
             throw error;
         }
     },

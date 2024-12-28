@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Type pour les éléments de menu
 interface MenuItem {
@@ -70,6 +71,7 @@ const AdminLayout = () => {
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const {user} = useAuth();
 
   // Gestion de la responsivité
   useEffect(() => {
@@ -90,7 +92,7 @@ const AdminLayout = () => {
       title: "Déconnexion réussie",
       description: "Vous avez été déconnecté avec succès.",
     });
-    navigate("/login");
+    navigate("/auth/login");
   };
 
   return (
@@ -170,9 +172,9 @@ const AdminLayout = () => {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Admin</p>
+                  <p className="text-sm font-medium leading-none">{user?.role}</p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    admin@example.com
+                    {user?.email}
                   </p>
                 </div>
               </DropdownMenuLabel>
