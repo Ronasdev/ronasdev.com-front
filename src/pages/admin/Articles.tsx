@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
     Table, 
     TableBody, 
@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/textarea"; // Add Textarea import
 import { 
     Select, 
     SelectContent, 
@@ -37,6 +37,10 @@ import {
     FaSearch, 
     FaFileImage 
 } from 'react-icons/fa';
+
+// Imports TinyMCE
+import { Editor } from '@tinymce/tinymce-react';
+import { TINYMCE_CONFIG, TINYMCE_EXCERPT_CONFIG } from '@/config/tinymce';
 
 import articleService, { Article } from '@/services/articleService';
 import categoryService, { Category } from '@/services/categoryService';
@@ -82,20 +86,24 @@ const ArticlesAdminPage: React.FC = () => {
     const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Références pour les éditeurs TinyMCE
+    const contentEditorRef = useRef<any>(null);
+    const excerptEditorRef = useRef<any>(null);
+
     // Effet pour charger les articles et catégories au montage du composant
     useEffect(() => {
         const fetchInitialData = async () => {
             // Réinitialiser l'état de chargement et d'erreur
-            setState(prev => ({ 
-                ...prev, 
-                isLoading: true, 
-                error: null 
+            setState(prev => ({
+                ...prev,
+                isLoading: true,
+                error: null
             }));
 
             try {
                 // Charger les articles
                 const articlesResponse = await articleService.getAllArticles(page);
-                
+
                 // Charger les catégories
                 const categoriesResponse = await categoryService.getAllCategories();
 
@@ -110,8 +118,8 @@ const ArticlesAdminPage: React.FC = () => {
                 setTotalArticles(articlesResponse.length);
             } catch (error) {
                 // Gestion détaillée des erreurs
-                const errorMessage = error instanceof Error 
-                    ? error.message 
+                const errorMessage = error instanceof Error
+                    ? error.message
                     : 'Impossible de charger les données';
 
                 setState(prev => ({
@@ -131,7 +139,7 @@ const ArticlesAdminPage: React.FC = () => {
         };
 
         fetchInitialData();
-    }, [page]); 
+    }, [page]);
 
     /**
      * Permet de filtrer par titre ou catégories
@@ -147,7 +155,7 @@ const ArticlesAdminPage: React.FC = () => {
 
             // Vérification des catégories
             const categoryMatch = (article?.categories || [])
-                .some(category => 
+                .some(category =>
                     // category?.name?.toLowerCase().includes(normalizedQuery) || false
                     category?.toLowerCase().includes(normalizedQuery) || false
                 );
@@ -167,8 +175,8 @@ const ArticlesAdminPage: React.FC = () => {
         setState(prev => ({
             ...prev,
             selectedArticle: article || null,
-            selectedCategories: article?.category_ids 
-                ? article.category_ids.split(',').map(Number) 
+            selectedCategories: article?.category_ids
+                ? article.category_ids.split(',').map(Number)
                 : [],
             isArticleModalOpen: true
         }));
@@ -178,9 +186,9 @@ const ArticlesAdminPage: React.FC = () => {
     const handleFeaturedImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            setState(prev => ({ 
-                ...prev, 
-                featuredImage: file 
+            setState(prev => ({
+                ...prev,
+                featuredImage: file
             }));
 
             try {
@@ -220,7 +228,11 @@ const ArticlesAdminPage: React.FC = () => {
                 return;
             }
 
-            if (!selectedArticle.content) {
+            // Récupération du contenu via les références TinyMCE
+            const content = contentEditorRef.current?.getContent();
+            const excerpt = excerptEditorRef.current?.getContent();
+
+            if (!content) {
                 toast.error('Le contenu est obligatoire');
                 return;
             }
@@ -228,8 +240,8 @@ const ArticlesAdminPage: React.FC = () => {
             // Préparation des données de l'article
             const articleData: Partial<Article> = {
                 title: selectedArticle.title,
-                content: selectedArticle.content,
-                excerpt: selectedArticle.excerpt || '',
+                content: content,
+                excerpt: excerpt || '',
                 status: selectedArticle.status || 'draft',
             };
 
@@ -266,7 +278,7 @@ const ArticlesAdminPage: React.FC = () => {
             // Mettre à jour la liste des articles
             setState(prev => ({
                 ...prev,
-                articles: selectedArticle.id 
+                articles: selectedArticle.id
                     ? prev.articles.map(a => a.id === savedArticle.id ? savedArticle : a)
                     : [...prev.articles, savedArticle],
                 isArticleModalOpen: false,
@@ -288,7 +300,7 @@ const ArticlesAdminPage: React.FC = () => {
     const handleDeleteArticle = async (articleId: number) => {
         try {
             await articleService.deleteArticle(articleId);
-            
+
             setState(prev => ({
                 ...prev,
                 articles: prev.articles.filter(article => article.id !== articleId)
@@ -336,7 +348,7 @@ const ArticlesAdminPage: React.FC = () => {
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold">
-                    Gestion des Articles 
+                    Gestion des Articles
                     <span className="text-sm text-gray-500 ml-3">
                         ({totalArticles} articles disponibles)
                     </span>
@@ -344,9 +356,9 @@ const ArticlesAdminPage: React.FC = () => {
                 <div className="flex space-x-4">
                     {/* Barre de recherche */}
                     <div className="relative flex-grow max-w-md">
-                        <input 
-                            type="text" 
-                            placeholder="Rechercher un article..." 
+                        <input
+                            type="text"
+                            placeholder="Rechercher un article..."
                             value={searchQuery}
                             onChange={handleSearch}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#49D6A2] transition-all"
@@ -355,20 +367,20 @@ const ArticlesAdminPage: React.FC = () => {
                     </div>
 
                     {/* Boutons de création */}
-                    <Button 
-                        onClick={() => setState(prev => ({ 
-                            ...prev, 
-                            isArticleModalOpen: true, 
-                            selectedArticle: null 
+                    <Button
+                        onClick={() => setState(prev => ({
+                            ...prev,
+                            isArticleModalOpen: true,
+                            selectedArticle: null
                         }))}
                     >
                         <FaPlus className="mr-2" /> Nouvel Article
                     </Button>
-                    <Button 
-                        variant="outline" 
-                        onClick={() => setState(prev => ({ 
-                            ...prev, 
-                            isCategoryModalOpen: true 
+                    <Button
+                        variant="outline"
+                        onClick={() => setState(prev => ({
+                            ...prev,
+                            isCategoryModalOpen: true
                         }))}
                     >
                         <FaPlus className="mr-2" /> Nouvelle Catégorie
@@ -420,9 +432,9 @@ const ArticlesAdminPage: React.FC = () => {
                                     <td className="p-3">
                                         <div className="flex flex-wrap gap-1">
                                             {article.categories?.map(category => (
-                                                <span 
+                                                <span
                                                     // key={category.id} 
-                                                    key={category} 
+                                                    key={category}
                                                     className="px-2 py-1 text-xs font-medium rounded-full bg-gray-200 text-gray-700"
                                                 >
                                                     {/* {category.name} */}
@@ -435,17 +447,15 @@ const ArticlesAdminPage: React.FC = () => {
 
                                     {/* Statut */}
                                     <td className="p-3">
-                                        <span 
-                                            className={`
-                                                px-2 py-1 text-xs font-medium rounded-full
-                                                ${article.status === 'published' ? 'bg-green-100 text-green-800' : 
-                                                  article.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
-                                                  'bg-gray-100 text-gray-800'}
-                                            `}
+                                        <span
+                                            className={`px-2 py-1 text-xs font-medium rounded-full
+                                                ${article.status === 'published' ? 'bg-green-100 text-green-800' :
+                                                    article.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                                                        'bg-gray-100 text-gray-800'}`}
                                         >
-                                            {article.status === 'published' ? 'Publié' : 
-                                             article.status === 'draft' ? 'Brouillon' : 
-                                             'Archivé'}
+                                            {article.status === 'published' ? 'Publié' :
+                                                article.status === 'draft' ? 'Brouillon' :
+                                                    'Archivé'}
                                         </span>
                                     </td>
 
@@ -461,9 +471,9 @@ const ArticlesAdminPage: React.FC = () => {
                                     {/* Image à la Une */}
                                     <td className="p-3">
                                         {article.featured_image ? (
-                                            <img 
-                                                src={ API_URL + article.featured_image} 
-                                                alt="Image à la une" 
+                                            <img
+                                                src={API_URL + article.featured_image}
+                                                alt="Image à la une"
                                                 className="w-16 h-16 object-cover rounded-md"
                                             />
                                         ) : (
@@ -474,14 +484,14 @@ const ArticlesAdminPage: React.FC = () => {
                                     {/* Actions */}
                                     <td className="p-3 text-right">
                                         <div className="flex justify-end space-x-2">
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
                                                 onClick={() => setState(prev => ({
                                                     ...prev,
                                                     selectedArticle: { ...article },
-                                                    selectedCategories: article.category_ids 
-                                                        ? article.category_ids.split(',').map(Number) 
+                                                    selectedCategories: article.category_ids
+                                                        ? article.category_ids.split(',').map(Number)
                                                         : [],
                                                     isArticleModalOpen: true
                                                 }))}
@@ -489,9 +499,9 @@ const ArticlesAdminPage: React.FC = () => {
                                             >
                                                 <FaEdit className="mr-2" /> Modifier
                                             </Button>
-                                            <Button 
-                                                variant="destructive" 
-                                                size="sm" 
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
                                                 onClick={() => {
                                                     const confirmDelete = window.confirm('Voulez-vous vraiment supprimer cet article ?');
                                                     if (confirmDelete) {
@@ -512,12 +522,12 @@ const ArticlesAdminPage: React.FC = () => {
             )}
 
             {/* Modal de création/édition d'article */}
-            <Dialog 
-                open={state.isArticleModalOpen} 
-                onOpenChange={() => setState(prev => ({ 
-                    ...prev, 
-                    isArticleModalOpen: false, 
-                    selectedArticle: null 
+            <Dialog
+                open={state.isArticleModalOpen}
+                onOpenChange={() => setState(prev => ({
+                    ...prev,
+                    isArticleModalOpen: false,
+                    selectedArticle: null
                 }))}
             >
                 <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
@@ -534,54 +544,49 @@ const ArticlesAdminPage: React.FC = () => {
                         {/* Champs de titre avec design amélioré */}
                         <div className="space-y-2">
                             <Label htmlFor="title" className="text-sm font-medium text-gray-700">Titre de l'Article</Label>
-                            <Input 
-                                id="title" 
-                                value={state.selectedArticle?.title || ''} 
-                                onChange={(e) => setState(prev => ({ 
-                                    ...prev, 
-                                    selectedArticle: { 
-                                        ...prev.selectedArticle, 
-                                        title: e.target.value 
-                                    } 
+                            <Input
+                                id="title"
+                                value={state.selectedArticle?.title || ''}
+                                onChange={(e) => setState(prev => ({
+                                    ...prev,
+                                    selectedArticle: {
+                                        ...prev.selectedArticle,
+                                        title: e.target.value
+                                    }
                                 }))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#49D6A2] transition-all" 
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#49D6A2] transition-all"
                                 placeholder="Entrez le titre de votre article"
                             />
                         </div>
 
-                        {/* Champs de contenu avec design amélioré */}
+                        {/* Champs de contenu avec TinyMCE */}
                         <div className="space-y-2">
                             <Label htmlFor="content" className="text-sm font-medium text-gray-700">Contenu de l'Article</Label>
-                            <Textarea 
-                                id="content" 
-                                value={state.selectedArticle?.content || ''} 
-                                onChange={(e) => setState(prev => ({ 
-                                    ...prev, 
-                                    selectedArticle: { 
-                                        ...prev.selectedArticle, 
-                                        content: e.target.value 
-                                    } 
-                                }))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-md min-h-[200px] focus:ring-2 focus:ring-[#49D6A2] transition-all" 
-                                placeholder="Rédigez le contenu de votre article..."
+                            <Editor
+                                apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+                                init={{
+                                    ...TINYMCE_CONFIG,
+                                    height: 500,
+                                }}
+                                onInit={(evt, editor) => {
+                                    contentEditorRef.current = editor;
+                                }}
+                                initialValue={state.selectedArticle?.content || ''}
                             />
                         </div>
 
-                        {/* Champs d'extrait avec design amélioré */}
+                        {/* Champs d'extrait avec TinyMCE */}
                         <div className="space-y-2">
                             <Label htmlFor="excerpt" className="text-sm font-medium text-gray-700">Extrait</Label>
-                            <Textarea 
-                                id="excerpt" 
-                                value={state.selectedArticle?.excerpt || ''} 
-                                onChange={(e) => setState(prev => ({ 
-                                    ...prev, 
-                                    selectedArticle: { 
-                                        ...prev.selectedArticle, 
-                                        excerpt: e.target.value 
-                                    } 
-                                }))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-md min-h-[100px] focus:ring-2 focus:ring-[#49D6A2] transition-all" 
-                                placeholder="Un court résumé de l'article (optionnel)"
+                            <Editor
+                                apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+                                init={{
+                                    ...TINYMCE_EXCERPT_CONFIG,
+                                }}
+                                onInit={(evt, editor) => {
+                                    excerptEditorRef.current = editor;
+                                }}
+                                initialValue={state.selectedArticle?.excerpt || ''}
                             />
                         </div>
 
@@ -590,12 +595,12 @@ const ArticlesAdminPage: React.FC = () => {
                             <Label htmlFor="status" className="text-sm font-medium text-gray-700">Statut de l'Article</Label>
                             <Select
                                 value={state.selectedArticle?.status || 'draft'}
-                                onValueChange={(value) => setState(prev => ({ 
-                                    ...prev, 
-                                    selectedArticle: { 
-                                        ...prev.selectedArticle, 
+                                onValueChange={(value) => setState(prev => ({
+                                    ...prev,
+                                    selectedArticle: {
+                                        ...prev.selectedArticle,
                                         status: value as 'draft' | 'published' | 'archived'
-                                    } 
+                                    }
                                 }))}
                             >
                                 <SelectTrigger className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#49D6A2]">
@@ -615,8 +620,8 @@ const ArticlesAdminPage: React.FC = () => {
                             <div className="flex items-center space-x-4 w-full">
                                 <div className="flex-grow">
                                     <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#49D6A2] transition-all">
-                                        <input 
-                                            type="file" 
+                                        <input
+                                            type="file"
                                             accept="image/*"
                                             onChange={handleFeaturedImageUpload}
                                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -624,8 +629,8 @@ const ArticlesAdminPage: React.FC = () => {
                                         <div className="flex flex-col items-center justify-center">
                                             <FaFileImage className="text-3xl text-gray-400 mb-2" />
                                             <p className="text-sm text-gray-500">
-                                                {state.featuredImage 
-                                                    ? state.featuredImage.name 
+                                                {state.featuredImage
+                                                    ? state.featuredImage.name
                                                     : 'Glissez et déposez ou cliquez pour télécharger'}
                                             </p>
                                         </div>
@@ -633,12 +638,12 @@ const ArticlesAdminPage: React.FC = () => {
                                 </div>
                                 {state.selectedArticle?.featured_image && (
                                     <div className="relative group">
-                                        <img 
-                                            src={API_URL + state.selectedArticle.featured_image} 
-                                            alt="Image à la une" 
+                                        <img
+                                            src={API_URL + state.selectedArticle.featured_image}
+                                            alt="Image à la une"
                                             className="w-32 h-32 object-cover rounded-lg shadow-md group-hover:opacity-75 transition-opacity"
                                         />
-                                        <button 
+                                        <button
                                             onClick={() => setState(prev => ({
                                                 ...prev,
                                                 selectedArticle: {
@@ -664,12 +669,10 @@ const ArticlesAdminPage: React.FC = () => {
                                         key={category.id}
                                         type="button"
                                         onClick={() => handleCategorySelect(category.id!)}
-                                        className={`
-                                            px-3 py-1 rounded-full text-sm transition-all
-                                            ${state.selectedCategories.includes(category.id!) 
-                                                ? 'bg-[#49D6A2] text-white' 
-                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}
-                                        `}
+                                        className={`px-3 py-1 rounded-full text-sm transition-all
+                                            ${state.selectedCategories.includes(category.id!)
+                                                ? 'bg-[#49D6A2] text-white'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                                     >
                                         {category.name}
                                     </button>
@@ -679,8 +682,8 @@ const ArticlesAdminPage: React.FC = () => {
                     </div>
 
                     <DialogFooter className="sticky bottom-0 bg-white z-10 pt-4 border-t">
-                        <Button 
-                            type="submit" 
+                        <Button
+                            type="submit"
                             onClick={handleSaveArticle}
                             className="w-full bg-[#49D6A2] hover:bg-[#3ac48c] text-white font-bold py-2 rounded-md transition-colors"
                         >
@@ -691,12 +694,12 @@ const ArticlesAdminPage: React.FC = () => {
             </Dialog>
 
             {/* Modal de création de catégorie */}
-            <Dialog 
-                open={state.isCategoryModalOpen} 
-                onOpenChange={() => setState(prev => ({ 
-                    ...prev, 
-                    isCategoryModalOpen: false, 
-                    newCategory: { name: '', description: '' } 
+            <Dialog
+                open={state.isCategoryModalOpen}
+                onOpenChange={() => setState(prev => ({
+                    ...prev,
+                    isCategoryModalOpen: false,
+                    newCategory: { name: '', description: '' }
                 }))}
             >
                 <DialogContent>
@@ -706,40 +709,40 @@ const ArticlesAdminPage: React.FC = () => {
                             Ajoutez une nouvelle catégorie pour vos articles
                         </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="categoryName" className="text-right">
                                 Nom de la Catégorie
                             </Label>
-                            <Input 
+                            <Input
                                 id="categoryName"
                                 value={state.newCategory.name || ''}
-                                onChange={(e) => setState(prev => ({ 
-                                    ...prev, 
-                                    newCategory: { 
-                                        ...prev.newCategory, 
-                                        name: e.target.value 
-                                    } 
+                                onChange={(e) => setState(prev => ({
+                                    ...prev,
+                                    newCategory: {
+                                        ...prev.newCategory,
+                                        name: e.target.value
+                                    }
                                 }))}
                                 className="col-span-3"
                                 placeholder="Ex: Développement Web"
                             />
                         </div>
-                        
+
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="categoryDescription" className="text-right">
                                 Description
                             </Label>
-                            <Textarea 
+                            <Textarea
                                 id="categoryDescription"
                                 value={state.newCategory.description || ''}
-                                onChange={(e) => setState(prev => ({ 
-                                    ...prev, 
-                                    newCategory: { 
-                                        ...prev.newCategory, 
-                                        description: e.target.value 
-                                    } 
+                                onChange={(e) => setState(prev => ({
+                                    ...prev,
+                                    newCategory: {
+                                        ...prev.newCategory,
+                                        description: e.target.value
+                                    }
                                 }))}
                                 className="col-span-3"
                                 placeholder="Description optionnelle de la catégorie"
@@ -748,8 +751,8 @@ const ArticlesAdminPage: React.FC = () => {
                     </div>
 
                     <DialogFooter>
-                        <Button 
-                            type="submit" 
+                        <Button
+                            type="submit"
                             onClick={handleCreateCategory}
                         >
                             Créer la Catégorie
