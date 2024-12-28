@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
     Table, 
     TableBody, 
@@ -62,9 +62,23 @@ const PortfoliosAdminPage: React.FC = () => {
         isModalOpen: false
     });
 
+    const [searchTerm, setSearchTerm] = useState('');
+
     const descriptionEditorRef = useRef<any>(null);
     const technologiesInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
+
+    const filteredPortfolios = useMemo(() => {
+        if (!searchTerm) return state.portfolios;
+
+        return state.portfolios.filter(portfolio => 
+            portfolio.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            portfolio.technologies.some(tech => 
+                tech.toLowerCase().includes(searchTerm.toLowerCase())
+            ) ||
+            portfolio.description.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [state.portfolios, searchTerm]);
 
     useEffect(() => {
         fetchPortfolios();
@@ -172,6 +186,13 @@ const PortfoliosAdminPage: React.FC = () => {
                 <Button onClick={() => openPortfolioModal()} className="flex items-center gap-2">
                     <FaPlus /> Ajouter un Projet
                 </Button>
+                <Input 
+                    type="search" 
+                    value={searchTerm} 
+                    onChange={(e) => setSearchTerm(e.target.value)} 
+                    placeholder="Rechercher un projet" 
+                    className="ml-4" 
+                />
             </div>
 
             {state.isLoading ? (
@@ -186,11 +207,14 @@ const PortfoliosAdminPage: React.FC = () => {
                             <TableHead>Titre</TableHead>
                             <TableHead>Technologies</TableHead>
                             <TableHead>Statut</TableHead>
+                            <TableHead>Lien du Projet</TableHead>
+                            <TableHead>GitHub</TableHead>
+                            <TableHead>Date de Création</TableHead>
                             <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {state.portfolios.map(portfolio => (
+                        {filteredPortfolios.map(portfolio => (
                             <TableRow key={portfolio.id}>
                                 <TableCell>{portfolio.title}</TableCell>
                                 <TableCell>
@@ -202,8 +226,43 @@ const PortfoliosAdminPage: React.FC = () => {
                                     <Badge 
                                         variant={portfolio.status === 'active' ? 'default' : 'destructive'}
                                     >
-                                        {portfolio.status}
+                                        {portfolio.status === 'active' ? 'Actif' : 'Archivé'}
                                     </Badge>
+                                </TableCell>
+                                <TableCell>
+                                    {portfolio.link ? (
+                                        <a 
+                                            href={portfolio.link} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="text-blue-600 hover:underline"
+                                        >
+                                            Voir le projet
+                                        </a>
+                                    ) : (
+                                        <span className="text-gray-400">Non défini</span>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {portfolio.github ? (
+                                        <a 
+                                            href={portfolio.github} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="text-green-600 hover:underline"
+                                        >
+                                            Voir GitHub
+                                        </a>
+                                    ) : (
+                                        <span className="text-gray-400">Non défini</span>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {new Date(portfolio.created_at).toLocaleDateString('fr-FR', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric'
+                                    })}
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex gap-2">
