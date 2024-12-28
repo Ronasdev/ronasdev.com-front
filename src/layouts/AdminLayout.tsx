@@ -73,6 +73,8 @@ const AdminLayout = () => {
   const { toast } = useToast();
   const {user} = useAuth();
 
+  const VITE_API_URL = import.meta.env.VITE_API_URL;
+
   // Gestion de la responsivité
   useEffect(() => {
     const handleResize = () => {
@@ -164,8 +166,14 @@ const AdminLayout = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://github.com/shadcn.png" alt="@admin" />
-                  <AvatarFallback>AD</AvatarFallback>
+                  {
+                   user?.avatar ? <AvatarImage src={VITE_API_URL + user?.avatar} alt="@admin" /> 
+                   : 
+                  //  <AvatarImage src="https://github.com/shadcn.png" alt="@admin" /> 
+                  <AvatarFallback className="text-green-600 text-sm" >
+                    {user?.name?.charAt(0).toUpperCase() + user?.name?.charAt(1).toUpperCase()}
+                    </AvatarFallback>
+                   }
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
