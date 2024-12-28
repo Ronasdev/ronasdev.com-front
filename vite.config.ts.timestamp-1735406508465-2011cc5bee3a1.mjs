@@ -1,0 +1,33 @@
+// vite.config.ts
+import { defineConfig } from "file:///C:/xampp/htdocs/projets-perso/ronasdev.com/ronasdev-front/node_modules/vite/dist/node/index.js";
+import react from "file:///C:/xampp/htdocs/projets-perso/ronasdev.com/ronasdev-front/node_modules/@vitejs/plugin-react-swc/index.mjs";
+import path from "path";
+var __vite_injected_original_dirname = "C:\\xampp\\htdocs\\projets-perso\\ronasdev.com\\ronasdev-front";
+var vite_config_default = defineConfig(() => ({
+  // Configuration du serveur de développement
+  server: {
+    host: "::",
+    // Écoute sur toutes les interfaces réseau
+    port: 8080,
+    // Port de développement
+    headers: {
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://localhost"
+    }
+  },
+  // Plugins Vite
+  plugins: [
+    react()
+    // Plugin React SWC officiel
+  ],
+  // Configuration des alias de chemins
+  resolve: {
+    alias: {
+      // Permet d'importer depuis "@/" au lieu de chemins relatifs
+      "@": path.resolve(__vite_injected_original_dirname, "./src")
+    }
+  }
+}));
+export {
+  vite_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidml0ZS5jb25maWcudHMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9kaXJuYW1lID0gXCJDOlxcXFx4YW1wcFxcXFxodGRvY3NcXFxccHJvamV0cy1wZXJzb1xcXFxyb25hc2Rldi5jb21cXFxccm9uYXNkZXYtZnJvbnRcIjtjb25zdCBfX3ZpdGVfaW5qZWN0ZWRfb3JpZ2luYWxfZmlsZW5hbWUgPSBcIkM6XFxcXHhhbXBwXFxcXGh0ZG9jc1xcXFxwcm9qZXRzLXBlcnNvXFxcXHJvbmFzZGV2LmNvbVxcXFxyb25hc2Rldi1mcm9udFxcXFx2aXRlLmNvbmZpZy50c1wiO2NvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9pbXBvcnRfbWV0YV91cmwgPSBcImZpbGU6Ly8vQzoveGFtcHAvaHRkb2NzL3Byb2pldHMtcGVyc28vcm9uYXNkZXYuY29tL3JvbmFzZGV2LWZyb250L3ZpdGUuY29uZmlnLnRzXCI7Ly8gQ29uZmlndXJhdGlvbiBWaXRlIHBvdXIgbGUgcHJvamV0IFJlYWN0XHJcbi8vIEltcG9ydGUgbGVzIGRcdTAwRTlwZW5kYW5jZXMgblx1MDBFOWNlc3NhaXJlcyBwb3VyIGxhIGNvbmZpZ3VyYXRpb25cclxuaW1wb3J0IHsgZGVmaW5lQ29uZmlnIH0gZnJvbSBcInZpdGVcIjsgIC8vIEZvbmN0aW9uIGRlIGNvbmZpZ3VyYXRpb24gZGUgVml0ZVxyXG5pbXBvcnQgcmVhY3QgZnJvbSBcIkB2aXRlanMvcGx1Z2luLXJlYWN0LXN3Y1wiOyAgLy8gUGx1Z2luIFJlYWN0IFNXQ1xyXG5pbXBvcnQgcGF0aCBmcm9tIFwicGF0aFwiOyAgLy8gTW9kdWxlIE5vZGUuanMgcG91ciBtYW5pcHVsYXRpb24gZGUgY2hlbWluc1xyXG5cclxuLy8gaHR0cHM6Ly92aXRlanMuZGV2L2NvbmZpZy9cclxuLy8gQ29uZmlndXJhdGlvbiBleHBvcnRcdTAwRTllIGF2ZWMgc3VwcG9ydCBkZXMgbW9kZXMgKGRcdTAwRTl2ZWxvcHBlbWVudC9wcm9kdWN0aW9uKVxyXG5leHBvcnQgZGVmYXVsdCBkZWZpbmVDb25maWcoKCkgPT4gKHtcclxuICAvLyBDb25maWd1cmF0aW9uIGR1IHNlcnZldXIgZGUgZFx1MDBFOXZlbG9wcGVtZW50XHJcbiAgc2VydmVyOiB7XHJcbiAgICBob3N0OiBcIjo6XCIsICAvLyBcdTAwQzljb3V0ZSBzdXIgdG91dGVzIGxlcyBpbnRlcmZhY2VzIHJcdTAwRTlzZWF1XHJcbiAgICBwb3J0OiA4MDgwLCAgLy8gUG9ydCBkZSBkXHUwMEU5dmVsb3BwZW1lbnRcclxuICAgIGhlYWRlcnM6IHtcclxuICAgICAgJ0NvbnRlbnQtU2VjdXJpdHktUG9saWN5JzogXHJcbiAgICAgICAgXCJkZWZhdWx0LXNyYyAnc2VsZic7IFwiICtcclxuICAgICAgICBcInNjcmlwdC1zcmMgJ3NlbGYnICd1bnNhZmUtaW5saW5lJyAndW5zYWZlLWV2YWwnOyBcIiArXHJcbiAgICAgICAgXCJzdHlsZS1zcmMgJ3NlbGYnICd1bnNhZmUtaW5saW5lJzsgXCIgK1xyXG4gICAgICAgIFwiaW1nLXNyYyAnc2VsZicgZGF0YTo7IFwiICtcclxuICAgICAgICBcImNvbm5lY3Qtc3JjICdzZWxmJyBodHRwOi8vbG9jYWxob3N0XCJcclxuICAgIH1cclxuICB9LFxyXG5cclxuICAvLyBQbHVnaW5zIFZpdGVcclxuICBwbHVnaW5zOiBbXHJcbiAgICByZWFjdCgpLCAgLy8gUGx1Z2luIFJlYWN0IFNXQyBvZmZpY2llbFxyXG4gIF0sXHJcblxyXG4gIC8vIENvbmZpZ3VyYXRpb24gZGVzIGFsaWFzIGRlIGNoZW1pbnNcclxuICByZXNvbHZlOiB7XHJcbiAgICBhbGlhczoge1xyXG4gICAgICAvLyBQZXJtZXQgZCdpbXBvcnRlciBkZXB1aXMgXCJAL1wiIGF1IGxpZXUgZGUgY2hlbWlucyByZWxhdGlmc1xyXG4gICAgICBcIkBcIjogcGF0aC5yZXNvbHZlKF9fZGlybmFtZSwgXCIuL3NyY1wiKSxcclxuICAgIH0sXHJcbiAgfSxcclxufSkpO1xyXG4iXSwKICAibWFwcGluZ3MiOiAiO0FBRUEsU0FBUyxvQkFBb0I7QUFDN0IsT0FBTyxXQUFXO0FBQ2xCLE9BQU8sVUFBVTtBQUpqQixJQUFNLG1DQUFtQztBQVF6QyxJQUFPLHNCQUFRLGFBQWEsT0FBTztBQUFBO0FBQUEsRUFFakMsUUFBUTtBQUFBLElBQ04sTUFBTTtBQUFBO0FBQUEsSUFDTixNQUFNO0FBQUE7QUFBQSxJQUNOLFNBQVM7QUFBQSxNQUNQLDJCQUNFO0FBQUEsSUFLSjtBQUFBLEVBQ0Y7QUFBQTtBQUFBLEVBR0EsU0FBUztBQUFBLElBQ1AsTUFBTTtBQUFBO0FBQUEsRUFDUjtBQUFBO0FBQUEsRUFHQSxTQUFTO0FBQUEsSUFDUCxPQUFPO0FBQUE7QUFBQSxNQUVMLEtBQUssS0FBSyxRQUFRLGtDQUFXLE9BQU87QUFBQSxJQUN0QztBQUFBLEVBQ0Y7QUFDRixFQUFFOyIsCiAgIm5hbWVzIjogW10KfQo=

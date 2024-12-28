@@ -14,9 +14,9 @@ export default defineConfig(() => ({
     headers: {
       'Content-Security-Policy': 
         "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co https://cdn.tiny.cloud; " +
         "style-src 'self' 'unsafe-inline'; " +
-        "img-src 'self' data:; " +
+        "img-src 'self' data: http://localhost https:; " +
         "connect-src 'self' http://localhost"
     }
   },
