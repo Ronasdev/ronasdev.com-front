@@ -31,6 +31,7 @@ import Formations from "./pages/admin/Formations";  // Gestion des formations
 import Users from "./pages/admin/Users";  // Gestion des utilisateurs
 import Comments from "./pages/admin/Comments";  // Gestion des commentaires
 import Settings from "./pages/admin/Settings";  // Paramètres
+import PortfoliosAdminPage from './pages/admin/Portfolios';  // Gestion des portfolios
 
 // Importation des pages d'authentification
 import AuthLayout from "./layouts/AuthLayout";  // Mise en page d'authentification
@@ -100,6 +101,7 @@ export default function App() {
                 <Route path="users" element={<Users />} />
                 <Route path="comments" element={<Comments />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="portfolios" element={<PortfoliosAdminPage />} />
               </Route>
 
               {/* Route 404 - Page non trouvée */}

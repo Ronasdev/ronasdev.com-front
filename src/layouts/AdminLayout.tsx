@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   LogOut,
+  FolderOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -45,6 +46,11 @@ const menuItems: MenuItem[] = [
     path: "/admin/articles",
   },
   {
+    icon: FolderOpen,
+    label: 'Portfolios',
+    path: '/admin/portfolios'
+  },
+  {
     icon: GraduationCap,
     label: "Formations",
     path: "/admin/formations",
@@ -71,7 +77,7 @@ const AdminLayout = () => {
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   const VITE_API_URL = import.meta.env.VITE_API_URL;
 
@@ -167,13 +173,13 @@ const AdminLayout = () => {
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
                   {
-                   user?.avatar ? <AvatarImage src={VITE_API_URL + user?.avatar} alt="@admin" /> 
-                   : 
-                  //  <AvatarImage src="https://github.com/shadcn.png" alt="@admin" /> 
-                  <AvatarFallback className="text-green-600 text-sm" >
-                    {user?.name?.charAt(0).toUpperCase() + user?.name?.charAt(1).toUpperCase()}
-                    </AvatarFallback>
-                   }
+                    user?.avatar ? <AvatarImage src={VITE_API_URL + user?.avatar} alt="@admin" />
+                      :
+                      //  <AvatarImage src="https://github.com/shadcn.png" alt="@admin" /> 
+                      <AvatarFallback className="text-green-600 text-sm" >
+                        {user?.name?.charAt(0).toUpperCase() + user?.name?.charAt(1).toUpperCase()}
+                      </AvatarFallback>
+                  }
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>

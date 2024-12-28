@@ -8,6 +8,7 @@ import {
     Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FaFolder } from 'react-icons/fa';
 
 const navigation = [
     { name: 'Tableau de bord', href: '/admin', icon: LayoutDashboard },
@@ -15,6 +16,7 @@ const navigation = [
     { name: 'Formations', href: '/admin/formations', icon: BookOpen },
     { name: 'Commentaires', href: '/admin/comments', icon: MessageSquare },
     { name: 'Utilisateurs', href: '/admin/users', icon: Users },
+    { name: 'Portfolios', href: '/admin/portfolios', icon: FaFolder },
     { name: 'Paramètres', href: '/admin/settings', icon: Settings },
 ];
 

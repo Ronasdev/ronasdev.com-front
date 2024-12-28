@@ -15,9 +15,9 @@ export interface PortfolioProject {
     title: string;         // Titre du projet
     description: string;   // Description détaillée
     technologies: string[];// Technologies utilisées
-    image_url: string;     // URL de l'image du projet
-    project_url?: string;  // URL du projet (optionnel)
-    github_url?: string;   // URL du repository GitHub (optionnel)
+    image: string;         // URL de l'image du projet
+    link?: string;         // URL du projet (optionnel)
+    github?: string;       // URL du repository GitHub (optionnel)
     status: 'active' | 'archived'; // Statut du projet
     created_at: string;    // Date de création
     updated_at: string;    // Date de dernière mise à jour
@@ -25,7 +25,9 @@ export interface PortfolioProject {
 
 // Types utilitaires pour la création et la mise à jour de projets
 export interface PortfolioProjectCreate extends Omit<PortfolioProject, 'id' | 'created_at' | 'updated_at'> {}
-export interface PortfolioProjectUpdate extends Partial<PortfolioProjectCreate> {}
+export interface PortfolioProjectUpdate extends Partial<PortfolioProjectCreate> {
+    id?: number;
+}
 
 /**
  * Service de gestion des portfolios
@@ -102,21 +104,20 @@ const portfolioService = {
 
     /**
      * Télécharge une image pour un projet de portfolio
-     * @param id Identifiant du projet
-     * @param image Fichier image à télécharger
+     * @param file Fichier image à télécharger
      * @returns Promise<{ url: string }> URL de l'image téléchargée
      */
-    async uploadImage(id: number, image: File): Promise<{ url: string }> {
+    async uploadImage(file: File): Promise<{ url: string }> {
+        const formData = new FormData();
+        formData.append('image', file);
+
         try {
-            const formData = new FormData();
-            formData.append('image', image);
-            
-            const response = await axios.post(`${API_URL}/portfolio/${id}/image`, formData, {
+            const response = await axios.post<{ url: string }>(`${API_URL}/portfolio/upload-image`, formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+                    'Content-Type': 'multipart/form-data'
+                }
             });
-            return response.data.data;
+            return response.data;
         } catch (error: any) {
             throw this.handleError(error);
         }
