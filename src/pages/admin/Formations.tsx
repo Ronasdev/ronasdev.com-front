@@ -126,15 +126,19 @@ export default function Formations() {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const formData = new FormData(e.currentTarget);
+        const form = e.currentTarget;
+        const formData = new FormData(form);
+        
         const formationData = {
             title: formData.get('title') as string,
             description: formData.get('description') as string,
             content: formData.get('content') as string,
             price: Number(formData.get('price')),
-            duration: formData.get('duration') as string,
+            duration: Number(formData.get('duration')),
             level: formData.get('level') as Formation['level'],
             status: formData.get('status') as Formation['status'],
+            max_participants: Number(formData.get('max_participants') || 0),
+            start_date: formData.get('start_date') as string,
         };
 
         if (selectedFormation) {
@@ -145,6 +149,7 @@ export default function Formations() {
         } else {
             createMutation.mutate(formationData as FormationCreate);
         }
+        setIsDialogOpen(false);
     };
 
     const filteredFormations = formations?.filter(
@@ -176,12 +181,10 @@ export default function Formations() {
                             Nouvelle formation
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[725px]">
+                    <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>
-                                {selectedFormation
-                                    ? 'Modifier la formation'
-                                    : 'Nouvelle formation'}
+                                {selectedFormation ? 'Modifier la formation' : 'Nouvelle formation'}
                             </DialogTitle>
                             <DialogDescription>
                                 {selectedFormation
@@ -189,8 +192,12 @@ export default function Formations() {
                                     : 'Créez une nouvelle formation'}
                             </DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleSubmit}>
-                            <div className="grid gap-4 py-4">
+                        <form 
+                            onSubmit={handleSubmit} 
+                            id="formation-form" 
+                            className="space-y-4 overflow-y-auto max-h-[60vh] pr-2"
+                        >
+                            <div className="grid gap-4">
                                 <div className="grid gap-2">
                                     <Label htmlFor="title">Titre</Label>
                                     <Input
@@ -200,6 +207,7 @@ export default function Formations() {
                                         required
                                     />
                                 </div>
+
                                 <div className="grid gap-2">
                                     <Label htmlFor="description">Description</Label>
                                     <Textarea
@@ -209,93 +217,112 @@ export default function Formations() {
                                         required
                                     />
                                 </div>
+
                                 <div className="grid gap-2">
-                                    <Label htmlFor="content">Contenu</Label>
+                                    <Label htmlFor="content">Contenu détaillé</Label>
                                     <Textarea
                                         id="content"
                                         name="content"
                                         defaultValue={selectedFormation?.content}
-                                        required
+                                        placeholder="Détails complets de la formation..."
                                     />
                                 </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="price">Prix</Label>
+                                        <Input
+                                            id="price"
+                                            name="price"
+                                            type="number"
+                                            step="0.01"
+                                            defaultValue={selectedFormation?.price}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="duration">Durée (heures)</Label>
+                                        <Input
+                                            id="duration"
+                                            name="duration"
+                                            type="number"
+                                            defaultValue={selectedFormation?.duration}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="level">Niveau</Label>
+                                        <Select 
+                                            name="level"
+                                            defaultValue={selectedFormation?.level}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Sélectionnez un niveau" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="beginner">Débutant</SelectItem>
+                                                <SelectItem value="intermediate">Intermédiaire</SelectItem>
+                                                <SelectItem value="advanced">Avancé</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="status">Statut</Label>
+                                        <Select 
+                                            name="status"
+                                            defaultValue={selectedFormation?.status}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Sélectionnez un statut" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="draft">Brouillon</SelectItem>
+                                                <SelectItem value="published">Publié</SelectItem>
+                                                <SelectItem value="archived">Archivé</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
                                 <div className="grid gap-2">
-                                    <Label htmlFor="price">Prix</Label>
+                                    <Label htmlFor="max_participants">Nombre max de participants</Label>
                                     <Input
-                                        id="price"
-                                        name="price"
+                                        id="max_participants"
+                                        name="max_participants"
                                         type="number"
-                                        defaultValue={selectedFormation?.price}
-                                        required
+                                        defaultValue={selectedFormation?.max_participants || ''}
                                     />
                                 </div>
+
                                 <div className="grid gap-2">
-                                    <Label htmlFor="duration">Durée</Label>
+                                    <Label htmlFor="start_date">Date de début</Label>
                                     <Input
-                                        id="duration"
-                                        name="duration"
-                                        defaultValue={selectedFormation?.duration}
-                                        required
+                                        id="start_date"
+                                        name="start_date"
+                                        type="date"
+                                        defaultValue={selectedFormation?.start_date ? 
+                                            new Date(selectedFormation.start_date).toISOString().split('T')[0] : 
+                                            ''
+                                        }
                                     />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="level">Niveau</Label>
-                                    <Select
-                                        name="level"
-                                        defaultValue={
-                                            selectedFormation?.level || 'beginner'
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Sélectionnez un niveau" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="beginner">
-                                                Débutant
-                                            </SelectItem>
-                                            <SelectItem value="intermediate">
-                                                Intermédiaire
-                                            </SelectItem>
-                                            <SelectItem value="advanced">
-                                                Avancé
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="status">Statut</Label>
-                                    <Select
-                                        name="status"
-                                        defaultValue={
-                                            selectedFormation?.status || 'draft'
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Sélectionnez un statut" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="draft">
-                                                Brouillon
-                                            </SelectItem>
-                                            <SelectItem value="published">
-                                                Publié
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
                                 </div>
                             </div>
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setIsDialogOpen(false)}
-                                >
-                                    Annuler
-                                </Button>
-                                <Button type="submit">
-                                    {selectedFormation ? 'Modifier' : 'Créer'}
-                                </Button>
-                            </DialogFooter>
                         </form>
+                        <DialogFooter className="sticky bottom-0 bg-white py-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsDialogOpen(false)}
+                            >
+                                Annuler
+                            </Button>
+                            <Button type="submit" form="formation-form">
+                                {selectedFormation ? 'Modifier' : 'Créer'}
+                            </Button>
+                        </DialogFooter>
                     </DialogContent>
                 </Dialog>
             </div>

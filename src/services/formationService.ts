@@ -10,16 +10,28 @@ const API_URL = import.meta.env.VITE_API_URL;
  * Interface représentant une formation dans l'application
  */
 export interface Formation {
-    id: number;            // Identifiant unique de la formation
-    title: string;         // Titre de la formation
-    description: string;   // Description détaillée
-    price: number;         // Prix de la formation
-    duration: string;      // Durée de la formation
-    level: string;         // Niveau de difficulté
-    status: string;        // Statut de la formation
-    image?: string;        // URL de l'image de la formation (optionnel)
-    created_at: string;    // Date de création
-    updated_at: string;    // Date de dernière mise à jour
+    id: number;
+    title: string;
+    slug: string;
+    description: string;
+    content: string;
+    price: number;
+    level: 'beginner' | 'intermediate' | 'advanced';
+    duration: number; // en heures
+    max_participants?: number;
+    instructor_id: number;
+    instructor_name?: string;
+    status: 'draft' | 'published' | 'archived';
+    start_date: string;
+    enrolled_count?: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface FormationCreate extends Omit<Formation, 'id' | 'created_at' | 'updated_at' | 'slug' | 'instructor_name' | 'enrolled_count'> {}
+
+export interface FormationUpdate extends Partial<FormationCreate> {
+    id?: number;
 }
 
 /**
@@ -67,7 +79,7 @@ const formationService = {
      * @param data Données partielles de la formation
      * @returns Promise<Formation | null> Formation créée ou null en cas d'erreur
      */
-    async create(data: Partial<Formation>): Promise<Formation | null> {
+    async create(data: FormationCreate): Promise<Formation | null> {
         try {
             const response = await axios.post<{ data: Formation }>(`${API_URL}/formations`, data, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -85,7 +97,7 @@ const formationService = {
      * @param data Données partielles à mettre à jour
      * @returns Promise<Formation | null> Formation mise à jour ou null en cas d'erreur
      */
-    async update(id: number, data: Partial<Formation>): Promise<Formation | null> {
+    async update(id: number, data: FormationUpdate): Promise<Formation | null> {
         try {
             const response = await axios.put<{ data: Formation }>(`${API_URL}/formations/${id}`, data, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
