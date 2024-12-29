@@ -15,9 +15,9 @@ import { PortfolioGridSkeleton } from "../components/LoadingStates";
 import useViewPreferences from "../hooks/useViewPreferences";
 
 // Données statiques des projets
-import { projects } from "../data/projects";
+import portfolioService, { PortfolioProject } from "@/services/portfolioService"; 
+import { useTheme } from "@/components/theme-provider";
 import { Button } from "../components/ui/button";
-import { useTheme } from "@/components/theme-provider";  // Ajout du hook de thème
 
 // Nombre de projets affichés par page
 const ITEMS_PER_PAGE = 6;
@@ -28,50 +28,61 @@ const ITEMS_PER_PAGE = 6;
  * @returns Composant de la page de portfolio
  */
 const Portfolio = () => {
-  // États de chargement et de pagination
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
+  // États pour gérer les projets et la pagination
+  const [isLoading, setIsLoading] = useState(true); // Indicateur de chargement des projets
+  const [currentPage, setCurrentPage] = useState(1); // Page courante
+  const [projects, setProjects] = useState<PortfolioProject[]>([]); // Liste des projets à afficher
+  const [totalProjects, setTotalProjects] = useState(0); // Nombre total de projets
   
   // Récupération du thème actuel
   const { theme } = useTheme();
   
-  // Hook de gestion des préférences de vue
+  // Gestion des préférences de vue utilisateur
   const { 
-    viewMode,           // Mode d'affichage (grille/liste)
+    viewMode, // Mode d'affichage (grille/liste)
     selectedTechnologies, // Technologies sélectionnées pour filtrer
-    searchQuery,        // Requête de recherche
-    setViewMode,        // Fonction pour changer le mode de vue
-    setSelectedTechnologies, // Fonction pour mettre à jour les technologies
-    setSearchQuery      // Fonction pour mettre à jour la recherche
+    searchQuery, // Requête de recherche
+    setViewMode,
+    setSelectedTechnologies,
+    setSearchQuery
   } = useViewPreferences("portfolio-preferences");
 
-  // Simulation de chargement
+  // Effet pour récupérer les projets dynamiquement
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    // Fonction asynchrone pour charger les projets
+    const fetchProjects = async () => {
+      try {
+        // Début du chargement
+        setIsLoading(true);
 
-  // Filtrage des projets selon les critères de recherche
-  const filteredProjects = projects.filter(project => {
-    const matchesTech = selectedTechnologies.length === 0 || 
-      project.technologies.some(tech => selectedTechnologies.includes(tech));
-    const matchesSearch = searchQuery === "" || 
-      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTech && matchesSearch;
-  });
+        // Récupération des projets paginés depuis le service
+        const response = await portfolioService.getPaginatedProjects(
+          currentPage, 
+          ITEMS_PER_PAGE, 
+          selectedTechnologies, 
+          searchQuery
+        );
 
-  // Calcul de la pagination
-  const totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedProjects = filteredProjects.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE
-  );
+        // Mise à jour des états avec les données récupérées
+        setProjects(response.data); // Projets de la page courante
+        setTotalProjects(response.total); // Nombre total de projets
+      } catch (error) {
+        // Gestion des erreurs de chargement
+        console.error("Erreur lors du chargement des projets:", error);
+      } finally {
+        // Fin du chargement
+        setIsLoading(false);
+      }
+    };
 
-  // Réinitialisation de la page lors du changement de filtres
+    // Appel de la fonction de chargement
+    fetchProjects();
+  }, [currentPage, selectedTechnologies, searchQuery]); // Dépendances qui déclenchent le rechargement
+
+  // Calcul du nombre total de pages
+  const totalPages = Math.ceil(totalProjects / ITEMS_PER_PAGE);
+
+  // Réinitialisation à la première page lors du changement de filtres
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedTechnologies, searchQuery]);
@@ -117,7 +128,7 @@ const Portfolio = () => {
         />
 
         {/* Message si aucun projet ne correspond aux filtres */}
-        {!isLoading && filteredProjects.length === 0 && (
+        {!isLoading && projects.length === 0 && (
           <motion.p
             className={`
               text-center mt-8
@@ -146,7 +157,7 @@ const Portfolio = () => {
               } gap-8`}
             >
               {/* Carte de projet avec animations */}
-              {paginatedProjects.map((project, index) => (
+              {projects.map((project, index) => (
                 <motion.article
                   key={project.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -179,12 +190,13 @@ const Portfolio = () => {
                     `}>
                       {project.title}
                     </h2>
-                    <p className={`
-                      mb-4
-                      ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
-                    `}>
-                      {project.description}
-                    </p>
+                    <p 
+                      className={`
+                        mb-4
+                        ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                      `}
+                      dangerouslySetInnerHTML={{ __html: project.description }}
+                    />
                     {/* Technologies utilisées */}
                     <div className="flex flex-wrap gap-2 mb-4">
                       {project.technologies.map((tech) => (
@@ -202,37 +214,41 @@ const Portfolio = () => {
                       ))}
                     </div>
                     {/* Boutons d'action */}
-                    <div className="mt-auto pt-4 border-t flex gap-4">
-                      <a
-                        href={project.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`
-                          flex items-center justify-center flex-1 gap-2 
-                          px-4 py-2 border rounded-full transition-colors
-                          ${theme === 'dark' 
-                            ? 'text-primary-light border-primary-light hover:bg-primary-light hover:text-secondary-dark' 
-                            : 'text-primary border-primary hover:bg-primary hover:text-white'}
-                        `}
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        Voir le projet
-                      </a>
-                      <a
-                        href={project.github}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`
-                          flex items-center justify-center flex-1 gap-2 
-                          px-4 py-2 border rounded-full transition-colors
-                          ${theme === 'dark' 
-                            ? 'text-secondary-light border-secondary-light hover:bg-secondary-light hover:text-secondary-dark' 
-                            : 'text-secondary border-secondary hover:bg-secondary hover:text-white'}
-                        `}
-                      >
-                        <Github className="w-4 h-4" />
-                        Code source
-                      </a>
+                     <div className="mt-auto pt-4 border-t flex gap-4">
+                      {project.link && (
+                        <a
+                          href={project.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`
+                            flex items-center justify-center flex-1 gap-2 
+                            px-4 py-2 border rounded-full transition-colors
+                            ${theme === 'dark' 
+                              ? 'text-primary-light border-primary-light hover:bg-primary-light hover:text-secondary-dark' 
+                              : 'text-primary border-primary hover:bg-primary hover:text-white'}
+                          `}
+                        >
+                          <ExternalLink className="w-4 h-4" size={16}  />
+                          Voir le projet
+                        </a>
+                      )}
+                      {project.github && (
+                        <a
+                          href={project.github}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`
+                            flex items-center justify-center flex-1 gap-2 
+                            px-4 py-2 border rounded-full transition-colors
+                            ${theme === 'dark' 
+                              ? 'text-secondary-light border-secondary-light hover:bg-secondary-light hover:text-secondary-dark' 
+                              : 'text-secondary border-secondary hover:bg-secondary hover:text-white'}
+                          `}
+                        >
+                          <Github className="w-4 h-4" size={16}  />
+                          Code source
+                        </a>
+                      )}
                     </div>
                   </div>
                 </motion.article>
@@ -242,56 +258,24 @@ const Portfolio = () => {
         </div>
 
         {/* Pagination */}
-        {!isLoading && totalPages > 1 && (
-          <div className="mt-8 flex justify-center gap-2">
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-8 space-x-4">
             {/* Bouton page précédente */}
             <Button
               variant="outline"
-              size="icon"
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className={`
-                ${theme === 'dark' 
-                  ? 'text-white border-secondary-light hover:bg-secondary-light/10' 
-                  : 'text-secondary-dark border-secondary hover:bg-secondary/10'}
-              `}
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="mr-2" /> Précédent
             </Button>
-
-            {/* Numéros de page */}
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? "default" : "outline"}
-                onClick={() => setCurrentPage(page)}
-                className={`
-                  ${currentPage === page 
-                    ? (theme === 'dark' 
-                      ? 'bg-primary-light text-secondary-dark' 
-                      : 'bg-primary text-white') 
-                    : (theme === 'dark' 
-                      ? 'text-white border-secondary-light hover:bg-secondary-light/10' 
-                      : 'text-secondary-dark border-secondary hover:bg-secondary/10')}
-                `}
-              >
-                {page}
-              </Button>
-            ))}
 
             {/* Bouton page suivante */}
             <Button
               variant="outline"
-              size="icon"
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className={`
-                ${theme === 'dark' 
-                  ? 'text-white border-secondary-light hover:bg-secondary-light/10' 
-                  : 'text-secondary-dark border-secondary hover:bg-secondary/10'}
-              `}
             >
-              <ChevronRight className="w-4 h-4" />
+              Suivant <ChevronRight className="ml-2" />
             </Button>
           </div>
         )}

@@ -1,4 +1,3 @@
-// Service de gestion des portfolios
 // Fournit des méthodes pour interagir avec l'API des portfolios
 
 import axios from 'axios';
@@ -7,9 +6,6 @@ import { authService } from './authService';
 // URL de l'API récupérée depuis les variables d'environnement
 const API_URL = import.meta.env.VITE_API_URL;
 
-/**
- * Interface représentant un projet de portfolio
- */
 export interface PortfolioProject {
     id: number;            // Identifiant unique du projet
     title: string;         // Titre du projet
@@ -29,10 +25,14 @@ export interface PortfolioProjectUpdate extends Partial<PortfolioProjectCreate> 
     id?: number;
 }
 
-/**
- * Service de gestion des portfolios
- * Fournit des méthodes CRUD et des opérations spécifiques
- */
+// Interface pour la réponse paginée
+export interface PaginatedResponse<T> {
+    data: T[];
+    total: number;
+    page: number;
+    per_page: number;
+}
+
 const portfolioService = {
     /**
      * Récupère tous les projets de portfolio
@@ -42,6 +42,48 @@ const portfolioService = {
         try {
             const response = await axios.get<{ data: PortfolioProject[] }>(`${API_URL}/portfolio`);
             return response.data.data || [];
+        } catch (error: any) {
+            throw this.handleError(error);
+        }
+    },
+
+    /**
+     * Récupère des projets de portfolio paginés avec filtrage
+     * @param page Numéro de page
+     * @param perPage Nombre de projets par page
+     * @param technologies Technologies à filtrer
+     * @param searchQuery Requête de recherche
+     * @returns Promise<PaginatedResponse<PortfolioProject>> Projets paginés
+     */
+    async getPaginatedProjects(
+        page: number = 1, 
+        perPage: number = 6, 
+        technologies?: string[], 
+        searchQuery?: string
+    ): Promise<PaginatedResponse<PortfolioProject>> {
+        try {
+            // Construire les paramètres de requête
+            const params = new URLSearchParams({
+                page: page.toString(),
+                per_page: perPage.toString()
+            });
+
+            // Ajouter les technologies si spécifiées
+            if (technologies && technologies.length > 0) {
+                params.append('technologies', technologies.join(','));
+            }
+
+            // Ajouter la requête de recherche si spécifiée
+            if (searchQuery && searchQuery.trim() !== '') {
+                params.append('search', searchQuery);
+            }
+
+            // Effectuer la requête
+            const response = await axios.get<PaginatedResponse<PortfolioProject>>(
+                `${API_URL}/portfolio?${params.toString()}`
+            );
+
+            return response.data;
         } catch (error: any) {
             throw this.handleError(error);
         }
@@ -118,21 +160,6 @@ const portfolioService = {
                 }
             });
             return response.data;
-        } catch (error: any) {
-            throw this.handleError(error);
-        }
-    },
-
-    /**
-     * Met à jour le statut d'un projet de portfolio
-     * @param id Identifiant du projet
-     * @param status Nouveau statut du projet
-     * @returns Promise<PortfolioProject> Projet avec le statut mis à jour
-     */
-    async updateStatus(id: number, status: PortfolioProject['status']): Promise<PortfolioProject> {
-        try {
-            const response = await axios.patch(`${API_URL}/portfolio/${id}/status`, { status });
-            return response.data.data;
         } catch (error: any) {
             throw this.handleError(error);
         }

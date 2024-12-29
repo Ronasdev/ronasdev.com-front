@@ -18,11 +18,12 @@
  * 
  * @returns {JSX.Element} Barre de filtrage du portfolio
  */
+import { useState, useEffect } from "react";
 import { Search, LayoutGrid, List } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { getAllTechnologies } from "../data/projects";
+import portfolioService from "@/services/portfolioService";
 
 // Interface des propriétés du composant
 interface FilterBarProps {
@@ -46,8 +47,30 @@ const FilterBar = ({
   searchQuery,
   onSearchQueryChange,
 }: FilterBarProps) => {
-  // Récupération de toutes les technologies disponibles
-  const technologies = getAllTechnologies();
+  // État pour stocker les technologies disponibles
+  const [technologies, setTechnologies] = useState<string[]>([]);
+
+  // Récupération des technologies disponibles
+  useEffect(() => {
+    const fetchTechnologies = async () => {
+      try {
+        const allProjects = await portfolioService.getAll();
+        
+        // Extraire les technologies uniques de tous les projets
+        const uniqueTechnologies = Array.from(
+          new Set(
+            allProjects.flatMap(project => project.technologies)
+          )
+        ).sort();
+
+        setTechnologies(uniqueTechnologies);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des technologies:", error);
+      }
+    };
+
+    fetchTechnologies();
+  }, []);
 
   /**
    * Gère le basculement de sélection d'une technologie
