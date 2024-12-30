@@ -23,6 +23,7 @@
 import { Search, LayoutGrid, List, SortAsc, SortDesc } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { useTheme } from '@/components/theme-provider';
 
 // Interface des propriétés du composant
 interface BlogFilterBarProps {
@@ -48,8 +49,20 @@ const BlogFilterBar = ({
   sortOrder,
   onSortOrderChange,
   searchQuery,
-  onSearchQueryChange,
+  onSearchQueryChange
 }: BlogFilterBarProps) => {
+  // Récupération du thème actuel
+  const { theme } = useTheme();
+
+  // Liste des catégories statiques
+  const categories = [
+    "Développement Web", 
+    "Frontend", 
+    "Backend", 
+    "DevOps", 
+    "Design"
+  ];
+
   return (
     // Conteneur principal avec espacement vertical
     <div className="space-y-4 mb-8">
@@ -57,13 +70,13 @@ const BlogFilterBar = ({
       <div className="flex gap-4 items-center">
         {/* Champ de recherche avec icône intégrée */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${theme === 'dark' ? 'text-gray-400' : 'text-secondary-light'} w-4 h-4`} />
           <Input
             type="text"
             placeholder="Rechercher un article..."
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
-            className="pl-10"
+            className={`pl-10 ${theme === 'dark' ? 'bg-secondary-dark/10 border-secondary-dark/20 text-white' : 'bg-white'}`}
           />
         </div>
 
@@ -96,6 +109,35 @@ const BlogFilterBar = ({
             <LayoutGrid className="w-4 h-4" />
           )}
         </Button>
+      </div>
+
+      {/* Filtres de catégories */}
+      <div className="flex flex-wrap gap-2">
+        {categories.map(category => (
+          <Button
+            key={category}
+            variant={selectedCategories.includes(category) ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => {
+              onCategoryChange(
+                selectedCategories.includes(category)
+                  ? selectedCategories.filter(c => c !== category)
+                  : [...selectedCategories, category]
+              );
+            }}
+            className={`
+              ${selectedCategories.includes(category) 
+                ? (theme === 'dark' 
+                  ? 'bg-primary-dark text-white' 
+                  : 'bg-primary text-white') 
+                : (theme === 'dark' 
+                  ? 'bg-secondary-dark/10 text-gray-300 hover:bg-secondary-dark/20' 
+                  : 'bg-gray-100 text-secondary-light hover:bg-gray-200')}
+            `}
+          >
+            {category}
+          </Button>
+        ))}
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ interface PaginationProps {
 const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) => {
   // Génère un tableau de numéros de page à afficher
   const getPageNumbers = () => {
+    console.log("totalPages", totalPages);
     const pageNumbers = [];
     const maxVisiblePages = 5;
     

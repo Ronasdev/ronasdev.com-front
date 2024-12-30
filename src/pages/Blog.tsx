@@ -9,15 +9,16 @@ import Footer from "../components/Footer";
 import BlogFilterBar from "../components/BlogFilterBar";
 import { motion } from "framer-motion";
 import { GridSkeleton } from "../components/LoadingStates";
-import { blogPosts } from "../data/blogPosts";
+import blogService, { BlogPost } from "@/services/blogService";
 import useViewPreferences from "../hooks/useViewPreferences";
 import ShareButtons from "../components/ShareButtons";
 import PopularCategories from "../components/PopularCategories";
 import Pagination from "../components/Pagination";
-import { useTheme } from "@/components/theme-provider";  // Ajout du hook de thème
+import { useTheme } from "@/components/theme-provider";
 
 // Nombre d'articles par page pour la pagination
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 2;
+const VITE_API_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Page principale du blog
@@ -34,12 +35,12 @@ const Blog = () => {
   // États de chargement et de pagination
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Récupération du thème actuel
   const { theme } = useTheme();
-  
-  // Hook personnalisé pour gérer les préférences de vue
-  const { 
+
+  // Hook personnalisé pour gérer les préférences de vue d'affichage
+  const {
     viewMode,           // Mode d'affichage (grille/liste)
     selectedCategories, // Catégories sélectionnées
     sortOrder,          // Ordre de tri (plus récent/plus ancien)
@@ -50,24 +51,55 @@ const Blog = () => {
     setSearchQuery      // Fonction pour mettre à jour la recherche
   } = useViewPreferences("blog");
 
+  // États pour stocker les articles
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+
   // Réinitialise la page courante lors du changement des filtres
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedCategories, searchQuery, sortOrder]);
 
-  // Simulation de chargement initial
+  // Effet pour charger les articles
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchPosts = async () => {
+      console.log("fetchPosts", {
+        page: currentPage,
+        per_page: ITEMS_PER_PAGE,
+        categories: selectedCategories,
+        searchQuery,
+        sortOrder,
+        status: "published",
+      });
+      
+      try {
+        setIsLoading(true);
+        const result = await blogService.getPosts({
+          page: currentPage,
+          per_page: ITEMS_PER_PAGE,
+          categories: selectedCategories,
+          searchQuery,
+          sortOrder,
+          status: "published",
+        });
+        console.log("getPosts", result);
+        setPosts(result.posts);
+        setTotalPages(result.totalPages);
+      } catch (error) {
+        console.error("Erreur lors du chargement des articles", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, [currentPage, selectedCategories, searchQuery, sortOrder]);
 
   // Calcul des catégories populaires
   const popularCategories = Array.from(
-    blogPosts.reduce((acc, post) => {
+    (posts || []).reduce((acc, post) => {
       // Compte le nombre d'occurrences de chaque catégorie
-      post.categories.forEach(category => {
+      post?.categories?.forEach(category => {
         acc.set(category, (acc.get(category) || 0) + 1);
       });
       return acc;
@@ -76,32 +108,31 @@ const Blog = () => {
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
 
-  // Filtrage et tri des articles
-  const filteredPosts = blogPosts
-    .filter(post => {
-      // Filtre par catégories
-      const matchesCategories = selectedCategories.length === 0 || 
-        post.categories.some(cat => selectedCategories.includes(cat));
-      
-      // Filtre par requête de recherche
-      const matchesSearch = searchQuery === "" || 
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      return matchesCategories && matchesSearch;
-    })
-    .sort((a, b) => {
-      // Tri par date (plus récent/plus ancien)
-      if (sortOrder === "newest") {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      }
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    });
 
-  // Gestion de la pagination
-  const totalPages = Math.ceil(filteredPosts.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedPosts = filteredPosts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // // Filtrage des articles
+  // const filteredPosts = posts
+  //   .filter(post => {
+  //     const matchesCategories = selectedCategories.length === 0 ||
+  //       post.categories.some(cat => selectedCategories.includes(cat));
+  //     const matchesSearch = searchQuery === "" ||
+  //       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+  //     return matchesCategories && matchesSearch;
+  //   })
+  //   .sort((a, b) => {
+  //     if (sortOrder === "newest") {
+  //       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  //     }
+  //     return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  //   });
+
+
+  // // Pagination
+  // const totalPages = Math.ceil(filteredPosts.length / ITEMS_PER_PAGE);
+  // const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  // const paginatedPosts = filteredPosts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
 
   // Gestionnaire de clic sur une catégorie
   const handleCategoryClick = (category: string) => {
@@ -113,11 +144,10 @@ const Blog = () => {
   };
 
   return (
-    // Conteneur principal avec dégradé de fond
     <div className={`
       min-h-screen 
-      ${theme === 'dark' 
-        ? 'bg-gradient-to-b from-secondary-dark/50 to-secondary-dark/20' 
+      ${theme === 'dark'
+        ? 'bg-gradient-to-b from-secondary-dark/50 to-secondary-dark/20'
         : 'bg-gradient-to-b from-white to-gray-50'}
     `}>
       <Navbar />
@@ -138,12 +168,11 @@ const Blog = () => {
             max-w-2xl mx-auto
             ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
           `}>
-            Découvrez mes derniers articles sur le développement web, 
+            Découvrez mes derniers articles sur le développement web,
             les nouvelles technologies et les meilleures pratiques.
           </p>
         </motion.div>
 
-        {/* Barre de filtrage et de recherche */}
         <BlogFilterBar
           selectedCategories={selectedCategories}
           onCategoryChange={setSelectedCategories}
@@ -170,30 +199,28 @@ const Blog = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5 }}
-                  className={`grid ${
-                    viewMode === "grid"
-                      ? "grid-cols-1 md:grid-cols-2 gap-6"
-                      : "grid-cols-1 gap-4"
-                  }`}
+                  className={`grid ${viewMode === "grid"
+                    ? "grid-cols-1 md:grid-cols-2 gap-6"
+                    : "grid-cols-1 gap-4"
+                    }`}
                 >
                   {/* Mapping des articles avec animations individuelles */}
-                  {paginatedPosts.map((post, index) => (
+                  {posts?.map((post, index) => (
                     <motion.article
                       key={post.slug}
                       className={`
-                        rounded-lg shadow-lg overflow-hidden hover:shadow-xl 
-                        transition-shadow
-                        ${theme === 'dark' 
-                          ? 'bg-secondary-dark/10 border border-secondary-dark/20' 
+                      rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow
+                       ${theme === 'dark'
+                          ? 'bg-secondary-dark/10 border border-secondary-dark/20'
                           : 'bg-white'}
-                      `}
+                    `}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: index * 0.1 }}
                     >
                       {/* Image de couverture */}
                       <img
-                        src={post.image}
+                        src={VITE_API_URL + post.featured_image}
                         alt={post.title}
                         className={`
                           w-full h-48 object-cover
@@ -203,22 +230,22 @@ const Blog = () => {
                       <div className="p-6">
                         {/* Métadonnées de l'article */}
                         <div className={`
-                          flex items-center space-x-4 text-sm mb-4
-                          ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
-                        `}>
+                           flex items-center space-x-4 text-sm mb-4
+                           ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                         `}>
                           {/* Catégorie principale */}
                           <span className={`
-                            px-3 py-1 rounded-full
-                            ${theme === 'dark' 
-                              ? 'bg-primary-dark/20 text-primary-light' 
+                             px-3 py-1 rounded-full
+                             ${theme === 'dark'
+                              ? 'bg-primary-dark/20 text-primary-light'
                               : 'bg-primary/10 text-primary'}
-                          `}>
-                            {post.categories[0]}
+                           `}>
+                            {post?.categories[0]}
                           </span>
                           {/* Date de publication */}
                           <div className="flex items-center">
                             <Calendar className="w-4 h-4 mr-1" />
-                            {new Date(post.date).toLocaleDateString('fr-FR', {
+                            {new Date(post.created_at).toLocaleDateString('fr-FR', {
                               year: 'numeric',
                               month: 'short',
                               day: 'numeric'
@@ -227,7 +254,7 @@ const Blog = () => {
                           {/* Temps de lecture */}
                           <div className="flex items-center">
                             <Clock className="w-4 h-4 mr-1" />
-                            {post.readTime || '5 min'}
+                            {post.read_time || '5 min'}
                           </div>
                         </div>
                         {/* Titre de l'article */}
@@ -239,33 +266,41 @@ const Blog = () => {
                         </h2>
                         {/* Extrait de l'article */}
                         <p className={`
-                          mb-4
-                          ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
-                        `}>
+                           mb-4
+                           ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
+                         `}>
                           {post.excerpt}
                         </p>
-                        {/* Lien de lecture */}
-                        <Link
-                          to={`/blog/${post.slug}`}
-                          className={`
-                            inline-flex items-center font-medium
-                            ${theme === 'dark' 
-                              ? 'text-primary-light hover:text-primary' 
-                              : 'text-primary hover:text-primary-dark'}
-                          `}
-                        >
-                          Lire l'article
-                          <ChevronRight className="w-4 h-4 ml-1" />
-                        </Link>
+                        {/* Lien de lecture et le partage de l'article*/}
+                        <div className="flex items-center justify-between">
+                          {/* Lien de lecture */}
+                          <Link
+                            to={`/blog/${post.slug}`}
+                            className={`
+                                      inline-flex items-center font-medium transition-colors
+                                      ${theme === 'dark'
+                                ? 'text-primary-light hover:text-primary'
+                                : 'text-primary hover:text-primary-dark'}
+                            `}
+                          >
+                            Lire la suite
+                            <ChevronRight className="w-4 h-4 ml-1" />
+                          </Link>
+                          <ShareButtons
+                            url={`${window.location.origin}/blog/${post.slug}`}
+                            title={post.title}
+                          />
+                        </div>
                       </div>
                     </motion.article>
                   ))}
                 </motion.div>
 
                 {/* Pagination */}
+                {/* {posts.length > ITEMS_PER_PAGE && ( */}
                 {totalPages > 1 && (
                   <div className="mt-8 flex justify-center">
-                    <Pagination 
+                    <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
                       onPageChange={setCurrentPage}
@@ -277,19 +312,20 @@ const Blog = () => {
             )}
 
             {/* Message si aucun article ne correspond */}
-            {!isLoading && paginatedPosts.length === 0 && (
-              <p className={`
+            {!isLoading && posts.length === 0 && (
+              <motion.p
+                className={`
                 text-center mt-12 text-xl
                 ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
               `}>
                 Aucun article ne correspond à vos critères.
-              </p>
+              </motion.p>
             )}
           </div>
 
           {/* Sidebar des catégories populaires */}
           <div className="lg:col-span-1">
-            <PopularCategories 
+            <PopularCategories
               categories={popularCategories}
               selectedCategories={selectedCategories}
               onCategoryClick={handleCategoryClick}

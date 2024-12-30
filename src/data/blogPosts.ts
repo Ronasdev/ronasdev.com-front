@@ -4,7 +4,7 @@ export interface BlogPost {
   image: string;
   categories: string[];
   date: string;
-  readTime: number;
+  read_time: number;
   slug: string;
   content: string[]; 
   author: {
@@ -20,7 +20,7 @@ export const blogPosts: BlogPost[] = [
     image: "/images/blog/blog1.jpg",
     categories: ["Web", "Tendances", "Frontend"],
     date: "2024-01-15",
-    readTime: 8,
+    read_time: 8,
     slug: "tendances-dev-web-2024",
     content: [
       "Le développement web continue d'évoluer rapidement, avec des technologies émergentes qui transforment la façon dont nous construisons des applications web.",
@@ -38,7 +38,7 @@ export const blogPosts: BlogPost[] = [
     image: "/images/blog/typescript-intro.jpg",
     categories: ["TypeScript", "JavaScript", "Tutoriel"],
     date: "2024-01-10",
-    readTime: 12,
+    read_time: 12,
     slug: "introduction-typescript",
     content: [
       "TypeScript est un langage de programmation open-source développé par Microsoft qui étend JavaScript en ajoutant des types statiques.",
@@ -56,7 +56,7 @@ export const blogPosts: BlogPost[] = [
     image: "/images/blog/react.jpg",
     categories: ["React", "Performance", "Frontend"],
     date: "2024-01-05",
-    readTime: 10,
+    read_time: 10,
     slug: "react-server-components",
     content: [
       "Les React Server Components représentent une avancée majeure dans l'écosystème React, offrant une nouvelle approche pour le rendu côté serveur.",
@@ -74,7 +74,7 @@ export const blogPosts: BlogPost[] = [
     image: "/images/blog/seo-react.jpeg",
     categories: ["SEO", "React", "Marketing"],
     date: "2024-01-02",
-    readTime: 15,
+    read_time: 15,
     slug: "seo-react-guide",
     content: [
       "L'optimisation SEO est cruciale pour améliorer la visibilité de vos applications React dans les résultats de recherche.",
@@ -92,7 +92,7 @@ export const blogPosts: BlogPost[] = [
     image: "/images/blog/blog2.jpg",
     categories: ["Architecture", "Frontend", "Microservices"],
     date: "2023-12-28",
-    readTime: 20,
+    read_time: 20,
     slug: "micro-frontend-2024",
     content: [
       "L'architecture micro-frontend est une approche moderne pour construire des applications web complexes.",
@@ -110,7 +110,7 @@ export const blogPosts: BlogPost[] = [
     image: "/images/blog/blog3.jpg",
     categories: ["Testing", "Automation", "QA"],
     date: "2023-12-25",
-    readTime: 18,
+    read_time: 18,
     slug: "cypress-testing-guide",
     content: [
       "Les tests automatisés sont essentiels pour garantir la qualité de vos applications web.",
@@ -128,7 +128,7 @@ export const blogPosts: BlogPost[] = [
     image: "/images/blog/graphql-rest.png",
     categories: ["API", "GraphQL", "Backend"],
     date: "2023-12-20",
-    readTime: 15,
+    read_time: 15,
     slug: "graphql-vs-rest-2024",
     content: [
       "GraphQL et REST sont deux approches populaires pour créer des API modernes.",
@@ -146,7 +146,7 @@ export const blogPosts: BlogPost[] = [
     image: "/images/blog/web-security.jpg",
     categories: ["Sécurité", "Web", "DevOps"],
     date: "2023-12-15",
-    readTime: 25,
+    read_time: 25,
     slug: "securite-web-moderne",
     content: [
       "La sécurité des applications web est cruciale pour protéger les données des utilisateurs.",
@@ -164,7 +164,7 @@ export const blogPosts: BlogPost[] = [
     image: "/blog/zustand-state.jpg",
     categories: ["React", "State Management", "Frontend"],
     date: "2023-12-10",
-    readTime: 12,
+    read_time: 12,
     slug: "zustand-state-management",
     content: [
       "La gestion d'état est un aspect crucial de la création d'applications React.",
@@ -182,7 +182,7 @@ export const blogPosts: BlogPost[] = [
     image: "/images/blog/react-native.png",
     categories: ["Mobile", "React Native", "Cross-platform"],
     date: "2023-12-05",
-    readTime: 20,
+    read_time: 20,
     slug: "react-native-guide",
     content: [
       "Le développement mobile est un aspect crucial de la création d'applications modernes.",
@@ -200,7 +200,7 @@ export const blogPosts: BlogPost[] = [
     image: "/images/blog/github-actions.png",
     categories: ["DevOps", "CI/CD", "Automation"],
     date: "2023-12-01",
-    readTime: 16,
+    read_time: 16,
     slug: "github-actions-guide",
     content: [
       "La mise en place d'un pipeline de développement automatisé est essentielle pour améliorer la qualité et la rapidité de vos applications web.",
@@ -218,7 +218,7 @@ export const blogPosts: BlogPost[] = [
     image: "/images/blog/web-vitals.png",
     categories: ["Performance", "SEO", "Frontend"],
     date: "2023-11-28",
-    readTime: 14,
+    read_time: 14,
     slug: "core-web-vitals",
     content: [
       "La performance web est un aspect crucial de la création d'applications web modernes.",

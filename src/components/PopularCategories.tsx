@@ -8,7 +8,7 @@ interface PopularCategoriesProps {
   }[];
   selectedCategories: string[];
   onCategoryClick: (category: string) => void;
-  theme?: 'light' | 'dark';  
+  theme?: 'light' | 'dark' | "system";  
 }
 
 /**
