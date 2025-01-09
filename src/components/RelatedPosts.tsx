@@ -8,6 +8,8 @@ interface RelatedPostsProps {
   posts: BlogPost[];
 }
 
+const VITE_API_URL = import.meta.env.VITE_API_URL;
+
 /**
  * Composant affichant les articles liés
  * Affiche une liste d'articles similaires avec une animation d'entrée
@@ -41,7 +43,7 @@ const RelatedPosts = ({ posts }: RelatedPostsProps) => {
               className="flex gap-4 group"
             >
               <img
-                src={post.image}
+                src={VITE_API_URL+ post.featured_image}
                 alt={post.title}
                 className="w-24 h-24 object-cover rounded-lg"
               />
@@ -59,7 +61,7 @@ const RelatedPosts = ({ posts }: RelatedPostsProps) => {
                   ${theme === 'dark' ? 'text-gray-400' : 'text-secondary-light'}
                 `}>
                   <Clock className="w-4 h-4 mr-1" />
-                  {post.readTime} min de lecture
+                  {post.read_time} min de lecture
                 </div>
               </div>
             </Link>
