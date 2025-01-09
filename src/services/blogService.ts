@@ -357,18 +357,18 @@ const blogService = {
     } catch (error) {
       console.error('Erreur lors de la récupération des détails de l\'article', error);
 
-      // Trouver l'article statique correspondant
-      const staticArticle = blogPosts.find(
-        post => post.slug === slugOrId || post.id.toString() === slugOrId
-      );
+      // // Trouver l'article statique correspondant
+      // const staticArticle = blogPosts.find(
+      //   post => post.slug === slugOrId || post.id.toString() === slugOrId
+      // );
 
-      if (staticArticle) {
-        return {
-          status: 'error',
-          data: staticArticle,
-          comments: []
-        };
-      }
+      // if (staticArticle) {
+      //   return {
+      //     status: 'error',
+      //     data: staticArticle,
+      //     comments: []
+      //   };
+      // }
 
       throw error;
     }

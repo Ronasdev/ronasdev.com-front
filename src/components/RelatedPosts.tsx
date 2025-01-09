@@ -29,7 +29,7 @@ const RelatedPosts = ({ posts }: RelatedPostsProps) => {
         Articles similaires
       </h3>
       <div className="space-y-6">
-        {posts.map((post, index) => (
+        {posts?.map((post, index) => (
           <motion.div
             key={post.slug}
             initial={{ opacity: 0, x: -20 }}
