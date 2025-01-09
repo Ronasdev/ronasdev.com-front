@@ -84,26 +84,38 @@
 
 // export default PopularCategories;
 
-import React, { useState, useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
+import { Button } from './ui/button';
 import axios from 'axios';
 import { API_BASE_URL } from '@/config/constants';
 
 interface Category {
   id: number;
   name: string;
-  article_count?: number;
+  article_count: number;
 }
 
 interface PopularCategoriesProps {
-  onCategorySelect: (categoryId: number | null) => void;
+  categories: Category[];
+  // selectedCategories: string[];
   selectedCategory: number | null;
+  // onCategoryClick: (category: string) => void;
+  onCategorySelect: (categoryId: number | null) => void;
+  theme?: 'light' | 'dark';
 }
 
-const PopularCategories: React.FC<PopularCategoriesProps> = ({ 
-  onCategorySelect, 
-  selectedCategory 
+
+
+const PopularCategories: React.FC<PopularCategoriesProps> = ({
+  // categories,
+  // selectedCategories,
+  // onCategoryClick,
+    onCategorySelect, 
+  selectedCategory,
+  theme
 }) => {
-  const [categories, setCategories] = useState<Category[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -133,12 +145,23 @@ const PopularCategories: React.FC<PopularCategoriesProps> = ({
   if (error) return <div>{error}</div>;
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-lg font-semibold mb-4">Catégories Populaires</h3>
-      
-      {/* Bouton "Toutes les catégories" */}
-      <button
+    <div className={`
+      p-6 rounded-lg shadow-md
+      ${theme === 'dark' 
+        ? 'bg-secondary-dark/10 border border-secondary-dark/20' 
+        : 'bg-white'}
+    `}>
+      <h3 className={`
+        text-xl font-semibold mb-4
+        ${theme === 'dark' ? 'text-white' : 'text-secondary-dark'}
+      `}>
+        Catégories Populaires
+      </h3>
+      <div className="space-y-2">
+           {/* Bouton "Toutes les catégories" */}
+       <Button
         onClick={() => onCategorySelect(null)}
+        variant={selectedCategory === null ? 'default' : 'outline'}
         className={`w-full text-left px-4 py-2 rounded transition-colors ${
           selectedCategory === null 
             ? 'bg-primary text-white' 
@@ -146,28 +169,41 @@ const PopularCategories: React.FC<PopularCategoriesProps> = ({
         }`}
       >
         Toutes les catégories
-      </button>
+      </Button>
 
-      {categories.map(category => (
-        <button
-          key={category.id}
-          onClick={() => onCategorySelect(category.id)}
-          className={`w-full text-left px-4 py-2 rounded transition-colors ${
-            selectedCategory === category.id 
-              ? 'bg-primary text-white' 
-              : 'hover:bg-gray-100'
-          }`}
-        >
-          <div className="flex justify-between items-center">
+        {categories?.map(category => (
+          <Button
+            key={category.id}
+            variant={selectedCategory === category.id ? 'default' : 'outline'}
+            className={`
+              w-full justify-between
+              ${selectedCategory === category.id
+                ? (theme === 'dark'
+                  ? 'bg-primary-dark text-white'
+                  : 'bg-primary text-white')
+                : (theme === 'dark'
+                  ? 'bg-secondary-dark/10 text-gray-300 hover:bg-secondary-dark/20'
+                  : 'bg-gray-100 text-secondary-light hover:bg-gray-200')}
+            `}
+            onClick={() => onCategorySelect(category.id)}
+          >
             <span>{category.name}</span>
-            <span className="text-sm text-gray-500">
-              {category.article_count || 0}
+            <span className={`
+              ml-2 px-2 py-1 rounded-full text-xs
+              ${selectedCategory === category.id
+                ? 'bg-white/20'
+                : (theme === 'dark' 
+                  ? 'bg-secondary-dark/20' 
+                  : 'bg-gray-200')}
+            `}>
+              {category.article_count}
             </span>
-          </div>
-        </button>
-      ))}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 };
 
 export default PopularCategories;
+

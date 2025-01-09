@@ -146,70 +146,83 @@
 // export default BlogFilterBar;
 
 
-
 import React, { useState } from 'react';
-import { Search, SortDesc, SortAsc } from "lucide-react";
+import { Search, LayoutGrid, List, SortAsc, SortDesc } from "lucide-react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { useTheme } from '@/components/theme-provider';
 
-// Interface des propriétés du composant
 interface BlogFilterBarProps {
-  onSearch: (query: string) => void;
-  onSortChange: (order: 'newest' | 'oldest') => void;
-  currentSortOrder: 'newest' | 'oldest';
+  selectedCategories: string[];
+  onCategoryChange: (categories: string[]) => void;
+  viewMode: 'grid' | 'list';
+  onViewModeChange: (mode: 'grid' | 'list') => void;
+  sortOrder: 'newest' | 'oldest';
+  onSortOrderChange: (order: 'newest' | 'oldest') => void;
+  searchQuery: string;
+  onSearchQueryChange: (query: string) => void;
+  theme?: 'light' | 'dark';
 }
 
-const BlogFilterBar: React.FC<BlogFilterBarProps> = ({ 
-  onSearch, 
-  onSortChange, 
-  currentSortOrder 
+const BlogFilterBar: React.FC<BlogFilterBarProps> = ({
+  selectedCategories,
+  onCategoryChange,
+  viewMode,
+  onViewModeChange,
+  sortOrder,
+  onSortOrderChange,
+  searchQuery,
+  onSearchQueryChange,
+  theme
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch(searchQuery);
-  };
 
   return (
-    <div className="space-y-4">
-      {/* Barre de recherche */}
-      <form onSubmit={handleSearchSubmit} className="relative">
-        <input 
-          type="text" 
-          placeholder="Rechercher un article..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-2 pl-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        <Search 
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" 
-        />
-        <button 
-          type="submit" 
-          className="hidden"
-        >
-          Rechercher
-        </button>
-      </form>
+    <div className="space-y-4 mb-8">
+      {/* Barre de recherche et boutons de contrôle */}
+      <div className="flex gap-4 items-center">
+        {/* Champ de recherche avec icône intégrée */}
+        <div className="relative flex-1">
+          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 
+            ${theme === 'dark' ? 'text-gray-400' : 'text-secondary-light'} w-4 h-4`} 
+          />
+          <Input
+            type="text"
+            placeholder="Rechercher un article..."
+            value={searchQuery}
+            onChange={(e) => onSearchQueryChange(e.target.value)}
+            className={`pl-10 ${theme === 'dark' 
+              ? 'bg-secondary-dark/10 border-secondary-dark/20 text-white' 
+              : 'bg-white'}`}
+          />
+        </div>
 
-      {/* Bouton de tri */}
-      <div className="flex justify-between items-center">
-        <span className="text-sm text-gray-600">Trier par</span>
-        <button 
-          onClick={() => onSortChange(currentSortOrder === 'newest' ? 'oldest' : 'newest')}
-          className="flex items-center space-x-2 px-3 py-1 border rounded-md hover:bg-gray-100 transition-colors"
+        {/* Bouton de changement d'ordre de tri */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => onSortOrderChange(sortOrder === 'newest' ? 'oldest' : 'newest')}
+          title={sortOrder === 'newest' ? "Plus ancien d'abord" : "Plus récent d'abord"}
         >
-          {currentSortOrder === 'newest' ? (
-            <>
-              <SortDesc className="w-4 h-4" />
-              <span>Plus récent</span>
-            </>
+          {sortOrder === 'newest' ? (
+            <SortDesc className="w-4 h-4" />
           ) : (
-            <>
-              <SortAsc className="w-4 h-4" />
-              <span>Plus ancien</span>
-            </>
+            <SortAsc className="w-4 h-4" />
           )}
-        </button>
+        </Button>
+
+        {/* Bouton de changement de mode d'affichage */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => onViewModeChange(viewMode === 'grid' ? 'list' : 'grid')}
+          title={viewMode === 'grid' ? "Vue liste" : "Vue grille"}
+        >
+          {viewMode === 'grid' ? (
+            <List className="w-4 h-4" />
+          ) : (
+            <LayoutGrid className="w-4 h-4" />
+          )}
+        </Button>
       </div>
     </div>
   );
