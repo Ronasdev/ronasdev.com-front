@@ -19,10 +19,19 @@ export interface Article {
     author_id?: number;
     featured_image?: string | null;
     categories?: string[];
-    category_ids?: string;	
+    category_ids?: string;
     categories_names?: string;
     created_at?: string;
     updated_at?: string;
+}
+export interface GetAllArticleResponse {
+    articles: Article[],
+    pagination: {
+        current_page: number;
+        per_page: number;
+        total_pages: number;
+        total_articles: number;
+    }
 }
 
 export interface ArticleResponse {
@@ -37,12 +46,12 @@ export const articleService = {
      * @param perPage Nombre d'articles par page
      * @returns Promise<Article[]> Liste de tous les articles
      */
-    async getAllArticles(page: number = 1, perPage: number = 10): Promise<Article[]> {
+    async getAllArticles(page: number = 1, perPage: number = 10): Promise<GetAllArticleResponse> {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get<{data: Article[]}>(`${API_URL}/articles`, {
+            const response = await axios.get<{ data: GetAllArticleResponse }>(`${API_URL}/articles`, {
                 params: { page, per_page: perPage },
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
@@ -63,7 +72,7 @@ export const articleService = {
         try {
             const token = localStorage.getItem('token');
             const formData = new FormData();
-            
+
             console.log("Creation de l'article: ", data);
             // Convertir les données en FormData
             Object.entries(data).forEach(([key, value]) => {
@@ -86,8 +95,8 @@ export const articleService = {
                 }
             });
 
-            const response = await axios.post<{data: Article}>(`${API_URL}/articles`, formData, {
-                headers: { 
+            const response = await axios.post<{ data: Article }>(`${API_URL}/articles`, formData, {
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }
@@ -108,7 +117,7 @@ export const articleService = {
     async updateArticle(id: number, data: Partial<Article>): Promise<Article> {
         try {
             const token = localStorage.getItem('token');
-            
+
             // Préparation des données
             const updateData = {
                 title: data.title,
@@ -124,7 +133,7 @@ export const articleService = {
             // Si une nouvelle image est présente, utiliser FormData
             if (data?.featured_image instanceof File) {
                 const formData = new FormData();
-                
+
                 // Ajouter tous les champs textuels
                 Object.entries(updateData).forEach(([key, value]) => {
                     if (value !== undefined) {
@@ -135,8 +144,8 @@ export const articleService = {
                 // Ajouter le fichier image
                 formData.append('featured_image', data.featured_image);
 
-                const response = await axios.put<{data: Article}>(`${API_URL}/articles/${id}`, formData, {
-                    headers: { 
+                const response = await axios.put<{ data: Article }>(`${API_URL}/articles/${id}`, formData, {
+                    headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'multipart/form-data'
                     },
@@ -147,8 +156,8 @@ export const articleService = {
                 return response.data.data;
             } else {
                 // Requête standard pour les mises à jour sans image
-                const response = await axios.put<{data: Article}>(`${API_URL}/articles/${id}`, updateData, {
-                    headers: { 
+                const response = await axios.put<{ data: Article }>(`${API_URL}/articles/${id}`, updateData, {
+                    headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
@@ -160,7 +169,7 @@ export const articleService = {
             }
         } catch (error) {
             console.error('Erreur détaillée lors de la mise à jour de l\'article', error);
-            
+
             // Log plus détaillé des erreurs
             if (axios.isAxiosError(error)) {
                 console.error('Détails de l\'erreur Axios:', {
@@ -182,7 +191,7 @@ export const articleService = {
         try {
             const token = localStorage.getItem('token');
             await axios.delete(`${API_URL}/articles/${id}`, {
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
@@ -206,10 +215,10 @@ export const articleService = {
             formData.append('image', file);
 
             const response = await axios.post<{
-                status: string, 
+                status: string,
                 data: { url: string }
             }>(`${API_URL}/articles/01/image`, formData, {
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }

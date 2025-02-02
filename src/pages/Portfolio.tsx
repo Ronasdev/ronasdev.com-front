@@ -19,6 +19,7 @@ import portfolioService, { PortfolioProject } from "@/services/portfolioService"
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "../components/ui/button";
 
+
 // Nombre de projets affichés par page
 const ITEMS_PER_PAGE = 6;
 
@@ -36,6 +37,8 @@ const Portfolio = () => {
   
   // Récupération du thème actuel
   const { theme } = useTheme();
+  
+  const VITE_API_URL = import.meta.env.VITE_API_URL;
   
   // Gestion des préférences de vue utilisateur
   const { 
@@ -174,7 +177,7 @@ const Portfolio = () => {
                   {/* Image du projet */}
                   <div className="relative">
                     <img
-                      src={project.image}
+                      src={VITE_API_URL + project.image}
                       alt={project.title}
                       className={`
                         w-full h-48 object-cover

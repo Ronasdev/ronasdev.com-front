@@ -102,20 +102,21 @@ const ArticlesAdminPage: React.FC = () => {
 
             try {
                 // Charger les articles
-                const articlesResponse = await articleService.getAllArticles(page);
+                const {articles, pagination} = await articleService.getAllArticles(page);
+                console.log('articlesResponse', articles);
 
                 // Charger les catégories
                 const categoriesResponse = await categoryService.getAllCategories();
-
+                // console.log('categoriesResponse', categoriesResponse);
                 // Mettre à jour l'état avec les données
                 setState(prev => ({
                     ...prev,
-                    articles: articlesResponse || [],
+                    articles: articles || [],
                     categories: categoriesResponse || [],
                     isLoading: false,
                     error: null
                 }));
-                setTotalArticles(articlesResponse.length);
+                setTotalArticles(articles.length);
             } catch (error) {
                 // Gestion détaillée des erreurs
                 const errorMessage = error instanceof Error
@@ -145,11 +146,12 @@ const ArticlesAdminPage: React.FC = () => {
      * Permet de filtrer par titre ou catégories
      */
     const filteredArticles = useMemo(() => {
-        if (!searchQuery) return state.articles || [];
+       
+        if (!searchQuery) return state?.articles || [];
 
         const normalizedQuery = searchQuery.toLowerCase().trim();
 
-        return (state.articles || []).filter(article => {
+        return (state?.articles || []).filter(article => {
             // Vérification du titre
             const titleMatch = article?.title?.toLowerCase().includes(normalizedQuery) || false;
 
@@ -162,7 +164,9 @@ const ArticlesAdminPage: React.FC = () => {
 
             return titleMatch || categoryMatch;
         });
-    }, [state.articles, searchQuery]);
+    }, [state?.articles, searchQuery]);
+
+    // console.log('filteredArticles', filteredArticles);
 
     // Méthode de recherche
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -389,7 +393,7 @@ const ArticlesAdminPage: React.FC = () => {
             </div>
 
             {/* Liste des articles */}
-            {filteredArticles.length === 0 ? (
+            {filteredArticles?.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
                     Aucun article trouvé
                     {searchQuery && (

@@ -150,16 +150,25 @@ const portfolioService = {
      * @returns Promise<{ url: string }> URL de l'image téléchargée
      */
     async uploadImage(file: File): Promise<{ url: string }> {
+        // console.log("portfolio image: ", file);
+        const token = localStorage.getItem('token');
+        // console.log('Token: ', token);
         const formData = new FormData();
         formData.append('image', file);
 
         try {
-            const response = await axios.post<{ url: string }>(`${API_URL}/portfolio/upload-image`, formData, {
+            // const response = await axios.post<{ url: string }>(`${API_URL}/portfolio/upload-image`, formData, {
+            const response = await axios.post<{
+                status: string,
+                data: { url: string }
+            }>(`${API_URL}/portfolio/1/upload-image`, formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data'
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${token}`
                 }
             });
-            return response.data;
+            // console.log("Image telechargée avec url: ", response);
+            return response?.data?.data;
         } catch (error: any) {
             throw this.handleError(error);
         }

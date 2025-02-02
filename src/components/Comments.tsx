@@ -6,6 +6,7 @@ import { ThumbsUp, MessageCircle, Flag } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useTheme } from "@/components/theme-provider";
+import commentService from '@/services/commentService';
 
 // Interface du modèle de commentaire
 interface Comment {
@@ -27,14 +28,23 @@ interface CommentsProps {
   onAddComment: (content: string, parentId?: string) => void;  // Ajout de commentaire
   onLikeComment: (commentId: string) => void;         // Like de commentaire
   onReportComment: (commentId: string) => void;       // Signalement de commentaire
+  currentArticleId: number;
 }
 
-const Comments = ({ comments, onAddComment, onLikeComment, onReportComment }: CommentsProps) => {
+const Comments = ({ 
+  comments,
+   onAddComment,
+    onLikeComment,
+     onReportComment,
+      currentArticleId,
+    }: CommentsProps) => {
   const { theme } = useTheme();
   // États pour la gestion des commentaires
   const [newComment, setNewComment] = useState("");     // Nouveau commentaire principal
   const [replyingTo, setReplyingTo] = useState<string | null>(null);  // Commentaire en cours de réponse
   const [replyContent, setReplyContent] = useState("");  // Contenu de la réponse
+
+
 
   /**
    * Soumet un nouveau commentaire principal
@@ -54,14 +64,43 @@ const Comments = ({ comments, onAddComment, onLikeComment, onReportComment }: Co
    * 
    * @param {string} parentId - Identifiant du commentaire parent
    */
-  const handleSubmitReply = (parentId: string) => {
-    if (replyContent.trim()) {
-      onAddComment(replyContent, parentId);
-      setReplyContent("");
-      setReplyingTo(null);
+  // const handleSubmitReply = (parentId: string) => {
+  //   if (replyContent.trim()) {
+  //     onAddComment(replyContent, parentId);
+  //     setReplyContent("");
+  //     setReplyingTo(null);
+  //   }
+  // };
+
+  const handleSubmitReply = async (content: string, parentId: string) => {
+    try {
+      await commentService.replyToComment(Number(parentId), {
+        content,
+        article_id: currentArticleId // À définir dans le contexte
+      });
+      // Mettre à jour l'état local des commentaires
+    } catch (error) {
+      console.error('Erreur lors de la réponse', error);
     }
   };
 
+const handleLikeComment = async (commentId: string) => {
+  try {
+    await commentService.likeComment(Number(commentId));
+    // Mettre à jour l'état local des commentaires
+  } catch (error) {
+    console.error('Erreur lors du like', error);
+  }
+};
+
+const handleReportComment = async (commentId: string) => {
+  try {
+    await commentService.reportComment(Number(commentId));
+    // Optionnel : afficher un message de confirmation
+  } catch (error) {
+    console.error('Erreur lors du signalement', error);
+  }
+};
   /**
    * Composant de rendu d'un commentaire individuel
    * Supporte les commentaires principaux et les réponses

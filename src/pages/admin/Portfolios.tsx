@@ -123,6 +123,7 @@ const PortfoliosAdminPage: React.FC = () => {
                 await portfolioService.update(state.selectedPortfolio.id, portfolioData);
                 toast.success('Projet mis à jour avec succès');
             } else {
+                console.log("portfolio create data: ", portfolioData)
                 // Create new portfolio
                 await portfolioService.create(portfolioData as PortfolioProjectCreate);
                 toast.success('Projet créé avec succès');
@@ -147,9 +148,11 @@ const PortfoliosAdminPage: React.FC = () => {
 
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
+        console.log("load project file: ", file);
         if (file) {
             try {
                 const { url } = await portfolioService.uploadImage(file);
+                console.log("portfolio image: ",url)
                 setState(prev => ({
                     ...prev,
                     selectedPortfolio: {
@@ -158,7 +161,7 @@ const PortfoliosAdminPage: React.FC = () => {
                     }
                 }));
             } catch (error: any) {
-                toast.error('Erreur lors du téléchargement de l\'image');
+                toast.error('Erreur lors du téléchargement de l\'image: ', error);
             }
         }
     };
@@ -292,7 +295,7 @@ const PortfoliosAdminPage: React.FC = () => {
                 <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
-                            {state.selectedPortfolio?.id ? 'Modifier' : 'Ajouter'} un Projet
+                            {state.selectedPortfolio?.id ? 'Modifier' : 'Ajouter'} le Projet {state.selectedPortfolio?.title}
                         </DialogTitle>
                         <DialogDescription>
                             Gérez les détails de votre projet de portfolio

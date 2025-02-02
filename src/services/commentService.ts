@@ -25,6 +25,9 @@ export interface Comment {
         email: string;
         avatar?: string;
     };
+    likes: number;               // Nombre de likes
+    isLiked: boolean;            // État de like
+    replies?: Comment[];         // Reponses au commentaire
 }
 
 // Types utilitaires pour la création et la mise à jour de commentaires
@@ -53,6 +56,23 @@ const commentService = {
         }
     },
 
+    async getByArticle(articleId: number): Promise<Comment[]> {
+        try {
+          const response = await axios.get<{ data: Comment[] }>(
+            `${API_URL}/articles/${articleId}/comments`
+          );
+          return response.data.data.map(comment => ({
+            ...comment,
+            author: {
+              name: comment.user?.name || 'Utilisateur',
+              avatar: comment.user?.avatar || '/avatars/default.jpg'
+            }
+          }));
+        } catch (error) {
+          throw this.handleError(error);
+        }
+      },
+
     /**
      * Récupère un commentaire par son ID
      * @param id Identifiant du commentaire
@@ -74,33 +94,117 @@ const commentService = {
      * @param articleId Identifiant de l'article
      * @returns Promise<Comment[]> Liste des commentaires de l'article
      */
-    async getByArticle(articleId: number): Promise<Comment[]> {
-        try {
-            const response = await axios.get<{ data: Comment[] }>(`${API_URL}/articles/${articleId}/comments`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
-            return response.data.data || [];
-        } catch (error: any) {
-            throw this.handleError(error);
-        }
-    },
+    // async getByArticle(articleId: number): Promise<Comment[]> {
+    //     try {
+    //         const response = await axios.get<{ data: Comment[] }>(`${API_URL}/articles/${articleId}/comments`, {
+    //             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    //         });
+    //         return response.data.data || [];
+    //     } catch (error: any) {
+    //         throw this.handleError(error);
+    //     }
+    // },
 
     /**
      * Crée un nouveau commentaire
      * @param data Données du nouveau commentaire
      * @returns Promise<Comment> Commentaire créé
      */
-    async create(data: CommentCreate): Promise<Comment> {
-        try {
-            const response = await axios.post<{ data: Comment }>(`${API_URL}/comments`, data, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
-            return response.data.data;
-        } catch (error: any) {
-            throw this.handleError(error);
-        }
-    },
+    // async create(data: CommentCreate): Promise<Comment> {
+    //     try {
+    //         const response = await axios.post<{ data: Comment }>(`${API_URL}/comments`, data, {
+    //             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    //         });
+    //         return response.data.data;
+    //     } catch (error: any) {
+    //         throw this.handleError(error);
+    //     }
+    // },
 
+    async create(data: { 
+        content: string, 
+        articleId: number, 
+        parentId?: string 
+      }): Promise<Comment> {
+        try {
+          const response = await axios.post<{ data: Comment }>(
+            `${API_URL}/comments`, 
+            {
+              content: data.content,
+              article_id: data.articleId,
+              parent_id: data.parentId
+            }
+          );
+          return {
+            ...response.data.data,
+            author: {
+              name: response.data.data.user?.name || 'Utilisateur',
+              avatar: response.data.data.user?.avatar || '/avatars/default.jpg'
+            }
+          };
+        } catch (error) {
+          throw this.handleError(error);
+        }
+      },
+     /**
+   * Ajoute un like à un commentaire
+   * @param commentId Identifiant du commentaire à liker
+   * @returns Promise<Comment> Commentaire mis à jour
+   */
+  async likeComment(commentId: number): Promise<Comment> {
+    try {
+      const response = await axios.post<{ data: Comment }>(
+        `${API_URL}/comments/${commentId}/like`, 
+        {},
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        }
+      );
+      return response.data.data;
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  },
+   /**
+   * Signale un commentaire comme inapproprié
+   * @param commentId Identifiant du commentaire à signaler
+   * @param reason Raison du signalement (optionnel)
+   * @returns Promise<void>
+   */
+   async reportComment(commentId: number, reason?: string): Promise<void> {
+    try {
+      await axios.post(
+        `${API_URL}/comments/${commentId}/report`,
+        { reason },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        }
+      );
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  },
+
+  /**
+   * Ajoute une réponse à un commentaire existant
+   * @param parentId Identifiant du commentaire parent
+   * @param data Données de la réponse
+   * @returns Promise<Comment> Commentaire réponse créé
+   */
+  async replyToComment(parentId: number, data: CommentCreate): Promise<Comment> {
+    try {
+      const response = await axios.post<{ data: Comment }>(
+        `${API_URL}/comments/${parentId}/reply`, 
+        data,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        }
+      );
+      return response.data.data;
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  },
     /**
      * Met à jour un commentaire existant
      * @param id Identifiant du commentaire
