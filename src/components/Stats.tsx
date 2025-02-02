@@ -5,8 +5,8 @@ const Stats = () => {
   const stats = [
     {
       icon: <Users className="w-8 h-8" />,
-      value: "100+",
-      label: "Étudiants formés",
+      value: "50+",
+      label: "Étudiants  en directe",
     },
     {
       icon: <Code className="w-8 h-8" />,
