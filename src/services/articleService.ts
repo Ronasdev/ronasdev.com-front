@@ -73,7 +73,7 @@ export const articleService = {
             const token = localStorage.getItem('token');
             const formData = new FormData();
 
-            console.log("Creation de l'article: ", data);
+            // console.log("Creation de l'article: ", data);
             // Convertir les données en FormData
             Object.entries(data).forEach(([key, value]) => {
                 if (value !== undefined) {
