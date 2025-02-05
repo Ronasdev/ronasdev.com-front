@@ -40,18 +40,18 @@ const Navbar = () => {
 
   // Configuration des liens sociaux
   const socialLinks = [
-    { 
-      icon: <Youtube className="w-5 h-5" />, 
+    {
+      icon: <Youtube className="w-5 h-5" />,
       url: "https://youtube.com/@ronasdev",
       name: "YouTube"
     },
-    { 
-      icon: <Facebook className="w-5 h-5" />, 
+    {
+      icon: <Facebook className="w-5 h-5" />,
       url: "https://facebook.com/ronasdev",
       name: "Facebook"
     },
-    { 
-      icon: <Github className="w-5 h-5" />, 
+    {
+      icon: <Github className="w-5 h-5" />,
       url: "https://github.com/ronasdev",
       name: "GitHub"
     },
@@ -61,11 +61,17 @@ const Navbar = () => {
     // Navbar avec effet de transparence et de flou lors du défilement
     <nav className={`
       fixed w-full z-50 transition-all duration-300 
-      ${isScrolled ? 
-        (theme === 'dark' ? 
-          'bg-secondary-dark/80 backdrop-blur-md shadow-lg' : 
+      ${isScrolled ?
+        (theme === 'dark' ?
+          'bg-secondary-dark/80 backdrop-blur-md shadow-lg' :
           'bg-white/80 backdrop-blur-md shadow-lg'
-        ) : 
+        ) :
+        'bg-transparent'
+      }
+      ${isOpen ? (theme === 'dark' ?
+        'bg-secondary-dark/80 backdrop-blur-md shadow-lg' :
+        'bg-white/80 backdrop-blur-md shadow-lg'
+      ) :
         'bg-transparent'
       }
     `}>
@@ -73,8 +79,8 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo/Titre */}
           <div className="flex-shrink-0">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className={`
                 text-2xl font-bold 
                 ${theme === 'dark' ? 'text-primary-light' : 'text-primary-dark'}
@@ -83,7 +89,7 @@ const Navbar = () => {
               Ronasdev
             </Link>
           </div>
-          
+
           {/* Menu Desktop */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-center space-x-8">
@@ -93,8 +99,8 @@ const Navbar = () => {
                   to={link.path}
                   className={`
                     flex items-center space-x-2 
-                    ${theme === 'dark' ? 
-                      'text-secondary-light hover:text-primary-light' : 
+                    ${theme === 'dark' ?
+                      'text-secondary-light hover:text-primary-light' :
                       'text-secondary-dark hover:text-primary-dark'
                     } 
                     transition-colors
@@ -118,8 +124,8 @@ const Navbar = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`
-                    ${theme === 'dark' ? 
-                      'text-secondary-light hover:text-primary-light' : 
+                    ${theme === 'dark' ?
+                      'text-secondary-light hover:text-primary-light' :
                       'text-secondary-dark hover:text-primary-dark'
                     } 
                     transition-colors
@@ -140,8 +146,8 @@ const Navbar = () => {
             <button
               onClick={() => setIsOpen(!isOpen)}
               className={`
-                ${theme === 'dark' ? 
-                  'text-secondary-light hover:text-primary-light' : 
+                ${theme === 'dark' ?
+                  'text-secondary-light hover:text-primary-light' :
                   'text-secondary-dark hover:text-primary-dark'
                 } 
                 transition-colors
@@ -166,8 +172,8 @@ const Navbar = () => {
                 to={link.path}
                 className={`
                   flex items-center space-x-2 px-3 py-2 
-                  ${theme === 'dark' ? 
-                    'text-secondary-light hover:text-primary-light' : 
+                  ${theme === 'dark' ?
+                    'text-secondary-light hover:text-primary-light' :
                     'text-secondary-dark hover:text-primary-dark'
                   } 
                   transition-colors
@@ -188,8 +194,8 @@ const Navbar = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`
-                      ${theme === 'dark' ? 
-                        'text-secondary-light hover:text-primary-light' : 
+                      ${theme === 'dark' ?
+                        'text-secondary-light hover:text-primary-light' :
                         'text-secondary-dark hover:text-primary-dark'
                       } 
                       transition-colors

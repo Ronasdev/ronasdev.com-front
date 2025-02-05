@@ -88,7 +88,7 @@ const BlogPost = () => {
     if (post?.id) {
       try {
         const fetchedComments = await commentService.getByArticle(post.id);
-        setComments(fetchedComments);
+        setComments(fetchedComments.comments);
       } catch (error) {
         console.error('Erreur lors du rafraîchissement des commentaires', error);
         // Notification d'erreur avec le hook useToast

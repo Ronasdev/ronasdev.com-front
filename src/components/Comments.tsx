@@ -6,10 +6,11 @@ import { Textarea } from "./ui/textarea";
 import { ThumbsUp, MessageCircle, Flag, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useToast } from "./ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import type { Comment } from "@/services/commentService";
 import commentService from '@/services/commentService';
 import { useAuth } from "@/contexts/AuthContext";
+import { AuthDialog } from "./auth/AuthDialog";
 
 interface CommentsProps {
   comments: Comment[];
@@ -17,10 +18,14 @@ interface CommentsProps {
   onCommentAdded: () => void;
 }
 
+/**
+ * Composant d'affichage et de gestion des commentaires
+ */
 export const Comments = ({ comments, articleId, onCommentAdded }: CommentsProps) => {
+  // Hooks
   const { theme } = useTheme();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   
   // États locaux
   const [newComment, setNewComment] = useState("");
@@ -28,135 +33,136 @@ export const Comments = ({ comments, articleId, onCommentAdded }: CommentsProps)
   const [replyContent, setReplyContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+
+  /**
+   * Vérifie l'authentification avant d'exécuter une action
+   * Si l'utilisateur n'est pas connecté, ouvre le dialogue d'authentification
+   */
+  const withAuth = (action: () => void) => {
+    console.log("withAuth: ", isAuthenticated());
+    if (!isAuthenticated()) {
+      console.log("L'utilisateur n'est pas connecté");
+      // Enregistre l'action pour le rediriger apres la connexion
+      setPendingAction(() => action);
+      setShowAuthDialog(true);
+      return;
+    }
+    action();
+  };
 
   /**
    * Gère la soumission d'un nouveau commentaire
    */
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAuthenticated) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour commenter",
-        variant: "destructive"
-      });
-      return;
-    }
+    
+    withAuth(async () => {
+      if (!newComment.trim()) return;
 
-    if (!newComment.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      await commentService.create({
-        content: newComment,
-        article_id: articleId
-      });
-      setNewComment("");
-      onCommentAdded();
-      toast({
-        title: "Succès",
-        description: "Votre commentaire a été ajouté"
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible d'ajouter votre commentaire",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+      setIsSubmitting(true);
+      try {
+        await commentService.create({
+          content: newComment,
+          article_id: articleId
+        });
+        setNewComment("");
+        onCommentAdded();
+        toast({
+          title: "Succès",
+          description: "Votre commentaire a été ajouté"
+        });
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible d'ajouter votre commentaire",
+          variant: "destructive"
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    });
   };
 
   /**
    * Gère la soumission d'une réponse à un commentaire
    */
   const handleSubmitReply = async (parentId: number) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour répondre",
-        variant: "destructive"
-      });
-      return;
-    }
+    withAuth(async () => {
+      if (!replyContent.trim()) return;
 
-    if (!replyContent.trim()) return;
-
-    setIsReplying(true);
-    try {
-      await commentService.replyToComment(parentId, {
-        content: replyContent,
-        article_id: articleId
-      });
-      setReplyContent("");
-      setReplyingTo(null);
-      onCommentAdded();
-      toast({
-        title: "Succès",
-        description: "Votre réponse a été ajoutée"
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible d'ajouter votre réponse",
-        variant: "destructive"
-      });
-    } finally {
-      setIsReplying(false);
-    }
+      setIsReplying(true);
+      try {
+        await commentService.replyToComment(parentId, {
+          content: replyContent,
+          article_id: articleId
+        });
+        setReplyContent("");
+        setReplyingTo(null);
+        onCommentAdded();
+        toast({
+          title: "Succès",
+          description: "Votre réponse a été ajoutée"
+        });
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible d'ajouter votre réponse",
+          variant: "destructive"
+        });
+      } finally {
+        setIsReplying(false);
+      }
+    });
   };
 
   /**
    * Gère le like/unlike d'un commentaire
    */
   const handleLike = async (commentId: number) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour liker",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      await commentService.toggleLike(commentId);
-      onCommentAdded(); // Rafraîchit les commentaires pour mettre à jour le compteur
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de liker le commentaire",
-        variant: "destructive"
-      });
-    }
+    withAuth(async () => {
+      try {
+        await commentService.toggleLike(commentId);
+        onCommentAdded(); // Rafraîchit les commentaires pour mettre à jour le compteur
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de liker le commentaire",
+          variant: "destructive"
+        });
+      }
+    });
   };
 
   /**
    * Gère le signalement d'un commentaire
    */
   const handleReport = async (commentId: number) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour signaler",
-        variant: "destructive"
-      });
-      return;
-    }
+    withAuth(async () => {
+      try {
+        await commentService.reportComment(commentId);
+        toast({
+          title: "Succès",
+          description: "Le commentaire a été signalé"
+        });
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de signaler le commentaire",
+          variant: "destructive"
+        });
+      }
+    });
+  };
 
-    try {
-      await commentService.reportComment(commentId);
-      toast({
-        title: "Succès",
-        description: "Le commentaire a été signalé"
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de signaler le commentaire",
-        variant: "destructive"
-      });
+  /**
+   * Gère la fermeture du dialogue d'authentification
+   */
+  const handleAuthSuccess = () => {
+    if (pendingAction) {
+      pendingAction();
+      setPendingAction(null);
     }
   };
 
@@ -166,14 +172,14 @@ export const Comments = ({ comments, articleId, onCommentAdded }: CommentsProps)
   const CommentItem = ({ comment, isReply = false }: { comment: Comment; isReply?: boolean }) => (
     <div className={`flex gap-4 ${isReply ? 'ml-12' : ''}`}>
       <Avatar className="h-10 w-10">
-        <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
-        <AvatarFallback>{comment.author.name[0]}</AvatarFallback>
+        <AvatarImage src={comment.author_avatar} alt={comment.author_name} />
+        <AvatarFallback>{comment.author_name[0]}</AvatarFallback>
       </Avatar>
       
       <div className="flex-1 space-y-2">
         <div className="flex items-center justify-between">
           <div>
-            <span className="font-semibold">{comment.author.name}</span>
+            <span className="font-semibold">{comment.author_name}</span>
             <span className="ml-2 text-sm text-muted-foreground">
               {formatDistanceToNow(new Date(comment.created_at), { locale: fr, addSuffix: true })}
             </span>
@@ -267,19 +273,22 @@ export const Comments = ({ comments, articleId, onCommentAdded }: CommentsProps)
         
         <form onSubmit={handleSubmitComment} className="space-y-4">
           <Textarea
-            placeholder="Votre commentaire..."
+            placeholder={isAuthenticated() ? "Votre commentaire..." : "Connectez-vous pour commenter"}
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
+            // disabled={!isAuthenticated()}
           />
           <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" 
+            // disabled={isSubmitting || !isAuthenticated()}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Envoi...
                 </>
               ) : (
-                "Commenter"
+                isAuthenticated() ? "Commenter" : "Se connecter pour commenter"
               )}
             </Button>
           </div>
@@ -291,6 +300,12 @@ export const Comments = ({ comments, articleId, onCommentAdded }: CommentsProps)
           <CommentItem key={comment.id} comment={comment} />
         ))}
       </div>
+
+      <AuthDialog 
+        isOpen={showAuthDialog}
+        onClose={() => setShowAuthDialog(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 };
