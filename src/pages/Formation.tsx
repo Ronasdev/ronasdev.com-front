@@ -8,6 +8,8 @@ import FormationStats from "../components/FormationStats";
 import FormationRegistration from "../components/FormationRegistration";
 import { Formation } from "../types/formation";
 import { useTheme } from "@/components/theme-provider";
+import axios from "axios";
+import { useToast } from "../components/ui/use-toast";
 
 // Données des formations
 const formations: Formation[] = [
@@ -49,6 +51,7 @@ const formations: Formation[] = [
     language: "Français",
     certification: true,
     online: false,
+    status: "upcoming",
   },
   {
     id: "typescript-fundamentals",
@@ -87,6 +90,7 @@ const formations: Formation[] = [
     language: "Français",
     certification: true,
     online: false,
+    status: "upcoming",
   },
   {
     id: "nextjs-fullstack",
@@ -127,6 +131,7 @@ const formations: Formation[] = [
     language: "Français",
     certification: true,
     online: false,
+    status: "upcoming",
   },
   {
     id: "tailwind-mastery",
@@ -165,6 +170,7 @@ const formations: Formation[] = [
     language: "Français",
     certification: true,
     online: false,
+    status: "upcoming",
   },
   {
     id: "node-backend",
@@ -205,6 +211,7 @@ const formations: Formation[] = [
     language: "Français",
     certification: true,
     online: false,
+    status: "upcoming",
   },
   {
     id: "vue-enterprise",
@@ -245,6 +252,7 @@ const formations: Formation[] = [
     language: "Français",
     certification: true,
     online: false,
+    status: "upcoming",
   },
 ];
 
@@ -253,6 +261,8 @@ const FormationPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<Formation | null>(null);
+  const [showRegistration, setShowRegistration] = useState(false);
+  const { toast } = useToast();
 
   // Filtrage des formations
   const filteredFormations = useMemo(() => {
@@ -266,11 +276,32 @@ const FormationPage = () => {
   // Gestion de l'inscription
   const handleRegister = (formation: Formation) => {
     setSelectedFormation(formation);
+    setShowRegistration(true);
   };
 
   // Fermeture du modal d'inscription
   const handleCloseRegistration = () => {
     setSelectedFormation(null);
+    setShowRegistration(false);
+  };
+
+  const handleEnroll = async (formation: Formation) => {
+    try {
+      const response = await axios.post(
+        `http://localhost/projets-perso/ronasdev.com/ronasdev-api/formations/${formation.id}/enroll`
+      );
+      toast({
+        title: "Succès",
+        description: "Vous êtes désormais inscrit à la formation.",
+        variant: "success",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de vous inscrire à la formation.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -326,10 +357,11 @@ const FormationPage = () => {
         </div>
 
         {/* Modal d'inscription */}
-        {selectedFormation && (
+        {showRegistration && selectedFormation && (
           <FormationRegistration
             formation={selectedFormation}
             onClose={handleCloseRegistration}
+            onEnroll={handleEnroll}
           />
         )}
       </div>

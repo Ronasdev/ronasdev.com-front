@@ -30,6 +30,7 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { useToast } from "./ui/use-toast";
 import { Formation } from "../types/formation";
+import axios from "axios";
 
 // Interface des propriétés du composant
 interface FormationRegistrationProps {
@@ -55,12 +56,16 @@ const initialForm: RegistrationForm = {
   message: "",
 };
 
+// URL de l'API récupérée depuis les variables d'environnement
+const API_URL = import.meta.env.VITE_API_URL;
+
 const FormationRegistration = ({
   formation,
   onClose,
 }: FormationRegistrationProps) => {
   // État du formulaire
   const [formData, setFormData] = useState<RegistrationForm>(initialForm);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Hook de notifications
   const { toast } = useToast();
@@ -70,25 +75,38 @@ const FormationRegistration = ({
    * 
    * @param {React.FormEvent} e - Événement de soumission du formulaire
    */
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    // Ici, vous pouvez ajouter la logique pour envoyer les données à votre backend
-    console.log("Données d'inscription:", {
-      formation: formation.id,
-      ...formData,
-    });
+    try {
+      // Envoyer les données au backend
+      const response = await axios.post(`${API_URL}/enrollments`, {
+        formation_id: formation.id,
+        ...formData,
+      });
+      console.log("enrollement d'une formation: ", response.data);
+      // Afficher un message de succès
+      toast({
+        title: "Inscription envoyée !",
+        description: "Nous vous contacterons bientôt pour confirmer votre inscription.",
+        duration: 5000,
+      });
 
-    // Afficher un message de succès
-    toast({
-      title: "Inscription envoyée !",
-      description: "Nous vous contacterons bientôt pour confirmer votre inscription.",
-      duration: 5000,
-    });
-
-    // Réinitialiser le formulaire et fermer la modal
-    setFormData(initialForm);
-    onClose();
+      // Réinitialiser le formulaire et fermer la modal
+      setFormData(initialForm);
+      onClose();
+    } catch (error: any) {
+      // Afficher un message d'erreur
+      toast({
+        title: "Erreur",
+        description: error.response?.data?.message || "Une erreur est survenue lors de l'inscription.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   /**
@@ -107,108 +125,77 @@ const FormationRegistration = ({
   };
 
   return (
-    // Modal d'inscription
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        {/* En-tête de la modal */}
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Inscription à la formation</DialogTitle>
           <DialogDescription>
-            {formation.title} - {formation.price}€
-            <br />
-            Date de début : {new Date(formation.startDate).toLocaleDateString("fr-FR")}
+            {formation.title} - {formation.level}
           </DialogDescription>
         </DialogHeader>
-
-        {/* Formulaire d'inscription */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Section Nom et Email */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Champ Nom */}
-            <div className="space-y-2">
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
               <Label htmlFor="name">Nom complet *</Label>
               <Input
                 id="name"
                 name="name"
-                required
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="John Doe"
+                required
               />
             </div>
-            
-            {/* Champ Email */}
-            <div className="space-y-2">
+            <div className="grid gap-2">
               <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                required
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="john@example.com"
+                required
               />
             </div>
-          </div>
-
-          {/* Section Téléphone et Entreprise */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Champ Téléphone */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">Téléphone</Label>
+            <div className="grid gap-2">
+              <Label htmlFor="phone">Téléphone *</Label>
               <Input
                 id="phone"
                 name="phone"
+                type="tel"
                 value={formData.phone}
                 onChange={handleChange}
-                placeholder="+33 6 12 34 56 78"
+                required
               />
             </div>
-            
-            {/* Champ Entreprise */}
-            <div className="space-y-2">
+            <div className="grid gap-2">
               <Label htmlFor="company">Entreprise</Label>
               <Input
                 id="company"
                 name="company"
                 value={formData.company}
                 onChange={handleChange}
-                placeholder="Nom de l'entreprise"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="message">Message (optionnel)</Label>
+              <Textarea
+                id="message"
+                name="message"
+                value={formData.message}
+                onChange={handleChange}
+                rows={3}
               />
             </div>
           </div>
-
-          {/* Champ Message */}
-          <div className="space-y-2">
-            <Label htmlFor="message">Message (optionnel)</Label>
-            <Textarea
-              id="message"
-              name="message"
-              value={formData.message}
-              onChange={handleChange}
-              placeholder="Vos attentes, questions ou besoins spécifiques..."
-              className="min-h-[100px]"
-            />
-          </div>
-
-          {/* Boutons d'action */}
-          <DialogFooter className="flex gap-2">
-            <Button variant="outline" type="button" onClick={onClose}>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
               Annuler
             </Button>
-            <Button type="submit">Envoyer la demande</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Envoi en cours..." : "S'inscrire"}
+            </Button>
           </DialogFooter>
         </form>
-
-        {/* Informations supplémentaires */}
-        <div className="mt-4 text-sm text-gray-500">
-          <p>* Champs obligatoires</p>
-          <p>
-            En soumettant ce formulaire, vous acceptez d'être contacté(e) au sujet
-            de cette formation.
-          </p>
-        </div>
       </DialogContent>
     </Dialog>
   );
