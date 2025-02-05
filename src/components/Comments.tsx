@@ -1,288 +1,294 @@
 import { useState } from "react";
-import { Avatar } from "./ui/avatar";
+import { useTheme } from "@/components/theme-provider";
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
-import { ThumbsUp, MessageCircle, Flag } from "lucide-react";
+import { ThumbsUp, MessageCircle, Flag, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useTheme } from "@/components/theme-provider";
+import { useToast } from "./ui/use-toast";
+import type { Comment } from "@/services/commentService";
 import commentService from '@/services/commentService';
+import { useAuth } from "@/contexts/AuthContext";
 
-// Interface du modèle de commentaire
-interface Comment {
-  id: string;                  // Identifiant unique
-  author: {
-    name: string;              // Nom de l'auteur
-    avatar: string;            // URL de l'avatar
-  };
-  content: string;             // Contenu du commentaire
-  date: string;                // Date de publication
-  likes: number;               // Nombre de likes
-  isLiked: boolean;            // État de like
-  replies?: Comment[];         // Réponses optionnelles
-}
-
-// Interface des propriétés du composant
 interface CommentsProps {
-  comments: Comment[];                                 // Liste des commentaires
-  onAddComment: (content: string, parentId?: string) => void;  // Ajout de commentaire
-  onLikeComment: (commentId: string) => void;         // Like de commentaire
-  onReportComment: (commentId: string) => void;       // Signalement de commentaire
-  currentArticleId: number;
+  comments: Comment[];
+  articleId: number;
+  onCommentAdded: () => void;
 }
 
-const Comments = ({ 
-  comments,
-   onAddComment,
-    onLikeComment,
-     onReportComment,
-      currentArticleId,
-    }: CommentsProps) => {
+export const Comments = ({ comments, articleId, onCommentAdded }: CommentsProps) => {
   const { theme } = useTheme();
-  // États pour la gestion des commentaires
-  const [newComment, setNewComment] = useState("");     // Nouveau commentaire principal
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);  // Commentaire en cours de réponse
-  const [replyContent, setReplyContent] = useState("");  // Contenu de la réponse
-
-
+  const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+  
+  // États locaux
+  const [newComment, setNewComment] = useState("");
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isReplying, setIsReplying] = useState(false);
 
   /**
-   * Soumet un nouveau commentaire principal
-   * 
-   * @param {React.FormEvent} e - Événement de soumission
+   * Gère la soumission d'un nouveau commentaire
    */
-  const handleSubmitComment = (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newComment.trim()) {
-      onAddComment(newComment);
-      setNewComment("");
-    }
-  };
-
-  /**
-   * Soumet une réponse à un commentaire spécifique
-   * 
-   * @param {string} parentId - Identifiant du commentaire parent
-   */
-  // const handleSubmitReply = (parentId: string) => {
-  //   if (replyContent.trim()) {
-  //     onAddComment(replyContent, parentId);
-  //     setReplyContent("");
-  //     setReplyingTo(null);
-  //   }
-  // };
-
-  const handleSubmitReply = async (content: string, parentId: string) => {
-    try {
-      await commentService.replyToComment(Number(parentId), {
-        content,
-        article_id: currentArticleId // À définir dans le contexte
+    if (!isAuthenticated) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour commenter",
+        variant: "destructive"
       });
-      // Mettre à jour l'état local des commentaires
+      return;
+    }
+
+    if (!newComment.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await commentService.create({
+        content: newComment,
+        article_id: articleId
+      });
+      setNewComment("");
+      onCommentAdded();
+      toast({
+        title: "Succès",
+        description: "Votre commentaire a été ajouté"
+      });
     } catch (error) {
-      console.error('Erreur lors de la réponse', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter votre commentaire",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-const handleLikeComment = async (commentId: string) => {
-  try {
-    await commentService.likeComment(Number(commentId));
-    // Mettre à jour l'état local des commentaires
-  } catch (error) {
-    console.error('Erreur lors du like', error);
-  }
-};
-
-const handleReportComment = async (commentId: string) => {
-  try {
-    await commentService.reportComment(Number(commentId));
-    // Optionnel : afficher un message de confirmation
-  } catch (error) {
-    console.error('Erreur lors du signalement', error);
-  }
-};
   /**
-   * Composant de rendu d'un commentaire individuel
-   * Supporte les commentaires principaux et les réponses
-   * 
-   * @param {Object} props - Propriétés du composant de commentaire
-   * @param {Comment} props.comment - Détails du commentaire
-   * @param {boolean} [props.isReply=false] - Indique si c'est une réponse
+   * Gère la soumission d'une réponse à un commentaire
    */
-  const CommentComponent = ({ comment, isReply = false }: { comment: Comment; isReply?: boolean }) => (
-    <div className={`flex space-x-4 ${isReply ? "ml-12 mt-4" : "mt-6"}`}>
-      {/* Avatar de l'auteur */}
-      <Avatar src={comment.author.avatar} alt={comment.author.name} />
+  const handleSubmitReply = async (parentId: number) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour répondre",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!replyContent.trim()) return;
+
+    setIsReplying(true);
+    try {
+      await commentService.replyToComment(parentId, {
+        content: replyContent,
+        article_id: articleId
+      });
+      setReplyContent("");
+      setReplyingTo(null);
+      onCommentAdded();
+      toast({
+        title: "Succès",
+        description: "Votre réponse a été ajoutée"
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter votre réponse",
+        variant: "destructive"
+      });
+    } finally {
+      setIsReplying(false);
+    }
+  };
+
+  /**
+   * Gère le like/unlike d'un commentaire
+   */
+  const handleLike = async (commentId: number) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour liker",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await commentService.toggleLike(commentId);
+      onCommentAdded(); // Rafraîchit les commentaires pour mettre à jour le compteur
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de liker le commentaire",
+        variant: "destructive"
+      });
+    }
+  };
+
+  /**
+   * Gère le signalement d'un commentaire
+   */
+  const handleReport = async (commentId: number) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour signaler",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await commentService.reportComment(commentId);
+      toast({
+        title: "Succès",
+        description: "Le commentaire a été signalé"
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de signaler le commentaire",
+        variant: "destructive"
+      });
+    }
+  };
+
+  /**
+   * Composant pour afficher un commentaire individuel
+   */
+  const CommentItem = ({ comment, isReply = false }: { comment: Comment; isReply?: boolean }) => (
+    <div className={`flex gap-4 ${isReply ? 'ml-12' : ''}`}>
+      <Avatar className="h-10 w-10">
+        <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
+        <AvatarFallback>{comment.author.name[0]}</AvatarFallback>
+      </Avatar>
       
-      <div className="flex-1">
-        {/* Contenu du commentaire */}
-        <div className={`
-          rounded-lg p-4
-          ${theme === 'dark' 
-            ? 'bg-secondary-dark/20 border border-secondary-dark/30' 
-            : 'bg-gray-50'}
-        `}>
-          <div className="flex items-center justify-between mb-2">
-            <span className={`
-              font-semibold
-              ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}
-            `}>
-              {comment.author.name}
-            </span>
-            <span className={`
-              text-sm
-              ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}
-            `}>
-              {formatDistanceToNow(new Date(comment.date), { addSuffix: true, locale: fr })}
+      <div className="flex-1 space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="font-semibold">{comment.author.name}</span>
+            <span className="ml-2 text-sm text-muted-foreground">
+              {formatDistanceToNow(new Date(comment.created_at), { locale: fr, addSuffix: true })}
             </span>
           </div>
-          <p className={`
-            ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}
-          `}>
-            {comment.content}
-          </p>
         </div>
-        
-        {/* Actions sur le commentaire */}
-        <div className="flex items-center space-x-4 mt-2">
-          {/* Bouton de like */}
+
+        <p className="text-sm">{comment.content}</p>
+
+        <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onLikeComment(comment.id)}
-            className={`
-              ${comment.isLiked 
-                ? 'text-primary' 
-                : theme === 'dark' 
-                  ? 'text-gray-300 hover:text-primary' 
-                  : 'text-gray-500'}
-            `}
+            className={`gap-1 ${comment.is_liked ? 'text-primary' : ''}`}
+            onClick={() => handleLike(comment.id)}
           >
-            <ThumbsUp className="w-4 h-4 mr-1" />
-            {comment.likes}
+            <ThumbsUp className="h-4 w-4" />
+            <span>{comment.likes_count}</span>
           </Button>
 
-          {/* Bouton de réponse */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-            className={`
-              ${theme === 'dark' 
-                ? 'text-gray-300 hover:text-white' 
-                : 'text-gray-500'}
-            `}
-          >
-            <MessageCircle className="w-4 h-4 mr-1" />
-            Répondre
-          </Button>
+          {!isReply && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1"
+              onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>Répondre</span>
+            </Button>
+          )}
 
-          {/* Bouton de signalement */}
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onReportComment(comment.id)}
-            className={`
-              ${theme === 'dark' 
-                ? 'text-gray-300 hover:text-red-400' 
-                : 'text-gray-500'}
-            `}
+            className="gap-1"
+            onClick={() => handleReport(comment.id)}
           >
-            <Flag className="w-4 h-4 mr-1" />
-            Signaler
+            <Flag className="h-4 w-4" />
+            <span>Signaler</span>
           </Button>
         </div>
 
-        {/* Formulaire de réponse */}
         {replyingTo === comment.id && (
           <div className="mt-4">
             <Textarea
+              placeholder="Votre réponse..."
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
-              placeholder="Écrivez votre réponse..."
-              className={`
-                min-h-[100px]
-                ${theme === 'dark' 
-                  ? 'bg-secondary-dark/20 border-secondary-dark/30 text-gray-200' 
-                  : 'bg-white'}
-              `}
+              className="mb-2"
             />
-            <div className="flex justify-end space-x-2 mt-2">
+            <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
-                onClick={() => setReplyingTo(null)}
-                className={`
-                  ${theme === 'dark' 
-                    ? 'text-gray-300 border-secondary-dark/30 hover:bg-secondary-dark/20' 
-                    : ''}
-                `}
+                size="sm"
+                onClick={() => {
+                  setReplyingTo(null);
+                  setReplyContent("");
+                }}
               >
                 Annuler
               </Button>
               <Button
+                size="sm"
                 onClick={() => handleSubmitReply(comment.id)}
-                disabled={!replyContent.trim()}
-                className={`
-                  ${theme === 'dark' 
-                    ? 'bg-primary-light hover:bg-primary-light/80' 
-                    : ''}
-                `}
+                disabled={isReplying}
               >
-                Répondre
+                {isReplying ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Envoi...
+                  </>
+                ) : (
+                  "Répondre"
+                )}
               </Button>
             </div>
           </div>
         )}
 
-        {/* Réponses imbriquées */}
-        {comment.replies?.map((reply) => (
-          <CommentComponent key={reply.id} comment={reply} isReply />
+        {comment?.replies?.map((reply) => (
+          <CommentItem key={reply.id} comment={reply} isReply />
         ))}
       </div>
     </div>
   );
 
   return (
-    <div className="space-y-6">
-      <h3 className={`
-        text-xl font-semibold
-        ${theme === 'dark' ? 'text-white' : 'text-secondary-dark'}
-      `}>
-        Commentaires
-      </h3>
-      
-      {/* Formulaire de nouveau commentaire */}
-      <form onSubmit={handleSubmitComment}>
-        <Textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Partagez votre avis..."
-          className={`
-            min-h-[100px]
-            ${theme === 'dark' 
-              ? 'bg-secondary-dark/20 border-secondary-dark/30 text-gray-200' 
-              : 'bg-white'}
-          `}
-        />
-        <div className="flex justify-end mt-2">
-          <Button 
-            type="submit" 
-            disabled={!newComment.trim()}
-            className={`
-              ${theme === 'dark' 
-                ? 'bg-primary-light hover:bg-primary-light/80' 
-                : ''}
-            `}
-          >
-            Commenter
-          </Button>
-        </div>
-      </form>
-
-      {/* Liste des commentaires */}
+    <div className="space-y-8">
       <div className="space-y-4">
-        {comments.map((comment) => (
-          <CommentComponent key={comment.id} comment={comment} />
+        <h3 className="text-2xl font-semibold">Commentaires</h3>
+        
+        <form onSubmit={handleSubmitComment} className="space-y-4">
+          <Textarea
+            placeholder="Votre commentaire..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+          />
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Envoi...
+                </>
+              ) : (
+                "Commenter"
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+
+      <div className="space-y-6">
+        {comments?.map((comment) => (
+          <CommentItem key={comment.id} comment={comment} />
         ))}
       </div>
     </div>

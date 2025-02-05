@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -8,18 +7,31 @@ import Comments from "@/components/Comments";
 import RelatedPosts from "@/components/RelatedPosts";
 import { motion } from "framer-motion";
 import { Calendar, Clock, Tag } from "lucide-react";
+import { useToast } from "@/hooks/use-toast"; // Correction de l'import
 import blogService from "@/services/blogService";
 import commentService from "@/services/commentService";
 import { useTheme } from "@/components/theme-provider";
+import type { Comment } from "@/services/commentService";
 
+/**
+ * Composant BlogPost
+ * Affiche le détail d'un article avec ses commentaires
+ */
 const BlogPost = () => {
+  // Hooks et états
   const { theme } = useTheme();
   const { slug } = useParams<{ slug: string }>();
+  const { toast } = useToast(); // Hook pour afficher les notifications
 
+  // États locaux
   const [isLoading, setIsLoading] = useState(true);
   const [post, setPost] = useState<any>(null);
   const [relatedPosts, setRelatedPosts] = useState([]);
+  const [comments, setComments] = useState<Comment[]>([]);
 
+  /**
+   * Effet pour charger les détails de l'article et les articles connexes
+   */
   useEffect(() => {
     const fetchArticleDetails = async () => {
       try {
@@ -29,6 +41,12 @@ const BlogPost = () => {
         setIsLoading(false);
       } catch (error) {
         console.error("Erreur lors du chargement de l'article", error);
+        // Notification d'erreur avec le hook useToast
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger l'article",
+          variant: "destructive"
+        });
         setIsLoading(false);
       }
     };
@@ -36,13 +54,24 @@ const BlogPost = () => {
     fetchArticleDetails();
   }, [slug]);
 
+  /**
+   * Effet pour charger les commentaires de l'article
+   */
   useEffect(() => {
     const fetchComments = async () => {
       try {
         const fetchedComments = await commentService.getByArticle(post.id);
-        setComments(fetchedComments);
+        console.log("fetchedComments dans Blogpost: ", fetchedComments);
+
+        setComments(fetchedComments.comments);
       } catch (error) {
         console.error('Erreur lors de la récupération des commentaires', error);
+        // Notification d'erreur avec le hook useToast
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les commentaires",
+          variant: "destructive"
+        });
       }
     };
 
@@ -51,38 +80,33 @@ const BlogPost = () => {
     }
   }, [post?.id]);
 
+  /**
+   * Fonction pour rafraîchir la liste des commentaires
+   * Appelée après l'ajout, la modification ou la suppression d'un commentaire
+   */
+  const refreshComments = async () => {
+    if (post?.id) {
+      try {
+        const fetchedComments = await commentService.getByArticle(post.id);
+        setComments(fetchedComments);
+      } catch (error) {
+        console.error('Erreur lors du rafraîchissement des commentaires', error);
+        // Notification d'erreur avec le hook useToast
+        toast({
+          title: "Erreur",
+          description: "Impossible de rafraîchir les commentaires",
+          variant: "destructive"
+        });
+      }
+    }
+  };
 
-  const [comments, setComments] = useState([
-    {
-      id: "1",
-      author: {
-        name: "John Doe",
-        avatar: "/avatars/john.jpg",
-      },
-      content: "Super article ! J'ai beaucoup appris.",
-      date: "2024-01-15T10:30:00",
-      likes: 5,
-      isLiked: false,
-      replies: [
-        {
-          id: "2",
-          author: {
-            name: "Jane Smith",
-            avatar: "/avatars/jane.jpg",
-          },
-          content: "Totalement d'accord avec toi !",
-          date: "2024-01-15T11:00:00",
-          likes: 2,
-          isLiked: false,
-        },
-      ],
-    },
-  ]);
-
+  // Redirection vers la page 404 si l'article n'existe pas
   if (!isLoading && !post) {
     return <Navigate to="/404" />;
   }
 
+  // Affichage du loader pendant le chargement
   if (isLoading || !post) {
     return (
       <div className={`
@@ -111,91 +135,6 @@ const BlogPost = () => {
 
   const VITE_API_URL = import.meta.env.VITE_API_URL;
 
-  // const handleAddComment = (content: string, parentId?: string) => {
-  //   const newComment = {
-  //     id: Date.now().toString(),
-  //     author: {
-  //       name: "Utilisateur",
-  //       avatar: "/avatars/default.jpg",
-  //     },
-  //     content,
-  //     date: new Date().toISOString(),
-  //     likes: 0,
-  //     isLiked: false,
-  //   };
-
-  //   if (parentId) {
-  //     setComments(comments.map(comment => {
-  //       if (comment.id === parentId) {
-  //         return {
-  //           ...comment,
-  //           replies: [...(comment.replies || []), newComment],
-  //         };
-  //       }
-  //       return comment;
-  //     }));
-  //   } else {
-  //     setComments([...comments, newComment]);
-  //   }
-  // };
-
-  const handleAddComment = async (content: string, parentId?: string) => {
-    try {
-      const newComment = await commentService.create({
-        content,
-        articleId: post.id,
-        parentId
-      });
-
-      setComments(prevComments => {
-        if (parentId) {
-          return prevComments.map(comment => 
-            comment.id === parentId 
-              ? { 
-                  ...comment, 
-                  replies: [...(comment.replies || []), newComment] 
-                } 
-              : comment
-          );
-        }
-        return [...prevComments, newComment];
-      });
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout du commentaire', error);
-    }
-  };
-  const handleLikeComment = (commentId: string) => {
-    setComments(comments.map(comment => {
-      if (comment.id === commentId) {
-        return {
-          ...comment,
-          likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1,
-          isLiked: !comment.isLiked,
-        };
-      }
-      if (comment.replies) {
-        return {
-          ...comment,
-          replies: comment.replies.map(reply => {
-            if (reply.id === commentId) {
-              return {
-                ...reply,
-                likes: reply.isLiked ? reply.likes - 1 : reply.likes + 1,
-                isLiked: !reply.isLiked,
-              };
-            }
-            return reply;
-          }),
-        };
-      }
-      return comment;
-    }));
-  };
-
-  const handleReportComment = (commentId: string) => {
-    console.log("Commentaire signalé:", commentId);
-  };
-
   return (
     <div className={`
       min-h-screen 
@@ -205,6 +144,7 @@ const BlogPost = () => {
     `}>
       <Navbar />
       <article className="pt-20 pb-12">
+        {/* Image de couverture de l'article */}
         <div className="relative h-96 mb-8">
           <img
             src={VITE_API_URL + post.featured_image}
@@ -227,7 +167,7 @@ const BlogPost = () => {
         </div>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Informations de l'article */}
+          {/* Métadonnées de l'article */}
           <div className={`
             flex items-center justify-between mb-8
             ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}
@@ -278,14 +218,12 @@ const BlogPost = () => {
             <RelatedPosts posts={relatedPosts} />
           </div>
 
-          {/* Commentaires */}
+          {/* Section des commentaires */}
           <div className="mt-16">
             <Comments 
               comments={comments}
-              onAddComment={handleAddComment}
-              onLikeComment={handleLikeComment}
-              onReportComment={handleReportComment}
-              currentArticleId={post?.id}
+              articleId={post.id}
+              onCommentAdded={refreshComments}
             />
           </div>
         </div>
@@ -296,5 +234,3 @@ const BlogPost = () => {
 };
 
 export default BlogPost;
-
-
