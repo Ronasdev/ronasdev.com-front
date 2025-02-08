@@ -10,6 +10,7 @@ import { Formation } from "../types/formation";
 import { useTheme } from "@/components/theme-provider";
 import axios from "axios";
 import { useToast } from "../components/ui/use-toast";
+import { API_BASE_URL } from '@/config/constants';
 
 // Données des formations
 const formations: Formation[] = [
@@ -288,7 +289,7 @@ const FormationPage = () => {
   const handleEnroll = async (formation: Formation) => {
     try {
       const response = await axios.post(
-        `http://localhost/projets-perso/ronasdev.com/ronasdev-api/formations/${formation.id}/enroll`
+        `${API_BASE_URL}/formations/${formation.id}/enroll`
       );
       toast({
         title: "Succès",
