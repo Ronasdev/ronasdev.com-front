@@ -35,7 +35,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       FallbackComponent={ErrorFallback}
       onReset={() => window.location.reload()}
     >
-      <ThemeProvider defaultTheme="dark" storageKey="ronasdev-theme">
+      <ThemeProvider defaultTheme="light" storageKey="ronasdev-theme">
         {/* <BrowserRouter> */}
         {/* Composant principal de l'application */}
         <HelmetProvider>
