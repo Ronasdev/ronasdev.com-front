@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { 
-    Table, 
-    TableBody, 
-    TableCaption, 
-    TableCell, 
-    TableHead, 
-    TableHeader, 
-    TableRow 
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
 } from "@/components/ui/table";
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogDescription, 
-    DialogHeader, 
-    DialogTitle, 
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
     DialogTrigger,
     DialogFooter
 } from "@/components/ui/dialog";
@@ -21,21 +21,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea"; // Add Textarea import
-import { 
-    Select, 
-    SelectContent, 
-    SelectItem, 
-    SelectTrigger, 
-    SelectValue 
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
-import { 
-    FaPlus, 
-    FaEdit, 
-    FaTrash, 
-    FaSearch, 
-    FaFileImage 
+import {
+    FaPlus,
+    FaEdit,
+    FaTrash,
+    FaSearch,
+    FaFileImage
 } from 'react-icons/fa';
 
 // Imports TinyMCE
@@ -102,7 +102,7 @@ const ArticlesAdminPage: React.FC = () => {
 
             try {
                 // Charger les articles
-                const {articles, pagination} = await articleService.getAllArticles(page);
+                const { articles, pagination } = await articleService.getAllArticles(page);
                 console.log('articlesResponse', articles);
 
                 // Charger les catégories
@@ -146,7 +146,7 @@ const ArticlesAdminPage: React.FC = () => {
      * Permet de filtrer par titre ou catégories
      */
     const filteredArticles = useMemo(() => {
-       
+
         if (!searchQuery) return state?.articles || [];
 
         const normalizedQuery = searchQuery.toLowerCase().trim();
@@ -166,7 +166,7 @@ const ArticlesAdminPage: React.FC = () => {
         });
     }, [state?.articles, searchQuery]);
 
-    // console.log('filteredArticles', filteredArticles);
+    console.log('filteredArticles', filteredArticles);
 
     // Méthode de recherche
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,29 +246,37 @@ const ArticlesAdminPage: React.FC = () => {
                 title: selectedArticle.title,
                 content: content,
                 excerpt: excerpt || '',
+                featured_image: selectedArticle?.featured_image,
                 status: selectedArticle.status || 'draft',
             };
-
+            const articlecateogories = [];
             // Gestion des catégories
             if (selectedCategories && selectedCategories.length > 0) {
                 articleData.category_ids = selectedCategories.join(',');
+
+                state.categories.forEach((category => {
+                    selectedCategories.forEach(selectedCategory => {
+                        if (category.id == selectedCategory)
+                            articlecateogories.push(category.name)
+                    })
+                }))
             }
 
-            // Gestion de l'image
-            if (featuredImage instanceof File) {
-                try {
-                    // Télécharger l'image et récupérer son URL
-                    const imageUrl = await articleService.uploadImage(featuredImage);
-                    articleData.featured_image = imageUrl;
-                } catch (error) {
-                    toast.error('Erreur lors du téléchargement de l\'image');
-                    console.error('Image upload error:', error);
-                    return;
-                }
-            } else if (selectedArticle.featured_image) {
-                // Conserver l'image existante si présente
-                articleData.featured_image = selectedArticle.featured_image;
-            }
+            // // Gestion de l'image
+            // if (featuredImage instanceof File) {
+            //     try {
+            //         // Télécharger l'image et récupérer son URL
+            //         const imageUrl = await articleService.uploadImage(featuredImage);
+            //         articleData.featured_image = imageUrl;
+            //     } catch (error) {
+            //         toast.error('Erreur lors du téléchargement de l\'image');
+            //         console.error('Image upload error:', error);
+            //         return;
+            //     }
+            // } else if (selectedArticle.featured_image) {
+            //     // Conserver l'image existante si présente
+            //     articleData.featured_image = selectedArticle.featured_image;
+            // }
 
             let savedArticle: Article;
             if (selectedArticle.id) {
@@ -276,8 +284,11 @@ const ArticlesAdminPage: React.FC = () => {
                 savedArticle = await articleService.updateArticle(selectedArticle.id, articleData);
             } else {
                 // Création
-                savedArticle = await articleService.createArticle(articleData);
+               savedArticle  = await articleService.createArticle(articleData);
             }
+            // savedArticle ? savedArticle.categories = articlecateogories:  savedArticle.categories = articlecateogories;
+
+            
 
             // Mettre à jour la liste des articles
             setState(prev => ({
@@ -332,7 +343,7 @@ const ArticlesAdminPage: React.FC = () => {
                 name: newCategory.name,
                 description: newCategory.description
             });
-
+            console.log("catégorie save: ", createdCategory);
             setState(prev => ({
                 ...prev,
                 categories: [...prev.categories, createdCategory],
@@ -537,10 +548,10 @@ const ArticlesAdminPage: React.FC = () => {
                 <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
                         <DialogTitle className="text-2xl font-bold text-gray-800">
-                            {state.selectedArticle ? 'Modifier l\'Article' : 'Créer un Nouvel Article'}
+                            {state.selectedArticle?.id ? 'Modifier l\'Article' : 'Créer un Nouvel Article'}
                         </DialogTitle>
                         <DialogDescription className="text-gray-500">
-                            Remplissez tous les champs pour {state.selectedArticle ? 'mettre à jour' : 'créer'} un article.
+                            Remplissez tous les champs pour {state.selectedArticle?.id ? 'mettre à jour' : 'créer'} un article.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -674,7 +685,7 @@ const ArticlesAdminPage: React.FC = () => {
                                         type="button"
                                         onClick={() => handleCategorySelect(category.id!)}
                                         className={`px-3 py-1 rounded-full text-sm transition-all
-                                            ${state.selectedCategories.includes(category.id!)
+                                            ${state.selectedCategories?.includes(category.id!)
                                                 ? 'bg-[#49D6A2] text-white'
                                                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                                     >
@@ -691,7 +702,7 @@ const ArticlesAdminPage: React.FC = () => {
                             onClick={handleSaveArticle}
                             className="w-full bg-[#49D6A2] hover:bg-[#3ac48c] text-white font-bold py-2 rounded-md transition-colors"
                         >
-                            {state.selectedArticle ? 'Mettre à jour' : 'Créer'}
+                            {state.selectedArticle?.id ? 'Mettre à jour' : 'Créer'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

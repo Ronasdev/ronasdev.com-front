@@ -77,19 +77,21 @@ export const articleService = {
             // Convertir les données en FormData
             Object.entries(data).forEach(([key, value]) => {
                 if (value !== undefined) {
-                    // Ajouter une condition pour ne pas ajouter l'image existante
-                    if (key === 'featured_image' && typeof value === 'string') {
-                        // Si c'est une URL, ne pas l'ajouter
-                        return;
-                    }
+                    // // Ajouter une condition pour ne pas ajouter l'image existante
+                    // if (key === 'featured_image' && typeof value === 'string') {
+                    //     // Si c'est une URL, ne pas l'ajouter
+                    //     return;
+                    // }
 
                     if (key === 'category_ids' && Array.isArray(value)) {
                         // Convertir les IDs de catégories en chaîne
                         formData.append(key, value.join(','));
-                    } else if (key === 'featured_image' && value instanceof File) {
-                        // Ajouter uniquement les nouveaux fichiers
-                        formData.append(key, value);
-                    } else {
+                    }
+                    // else if (key === 'featured_image' && value instanceof File) {
+                    //     // Ajouter uniquement les nouveaux fichiers
+                    //     formData.append(key, value);
+                    // } 
+                    else {
                         formData.append(key, value);
                     }
                 }
@@ -131,42 +133,42 @@ export const articleService = {
             console.log("Données de mise à jour de l'article:", updateData);
 
             // Si une nouvelle image est présente, utiliser FormData
-            if (data?.featured_image instanceof File) {
-                const formData = new FormData();
+            // if (data?.featured_image instanceof File) {
+            //     const formData = new FormData();
 
-                // Ajouter tous les champs textuels
-                Object.entries(updateData).forEach(([key, value]) => {
-                    if (value !== undefined) {
-                        formData.append(key, value as string);
-                    }
-                });
+            //     // Ajouter tous les champs textuels
+            //     Object.entries(updateData).forEach(([key, value]) => {
+            //         if (value !== undefined) {
+            //             formData.append(key, value as string);
+            //         }
+            //     });
 
-                // Ajouter le fichier image
-                formData.append('featured_image', data.featured_image);
+            //     // Ajouter le fichier image
+            //     formData.append('featured_image', data.featured_image);
 
-                const response = await axios.put<{ data: Article }>(`${API_URL}/articles/${id}`, formData, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data'
-                    },
-                    timeout: 10000
-                });
+            //     const response = await axios.put<{ data: Article }>(`${API_URL}/articles/${id}`, formData, {
+            //         headers: {
+            //             'Authorization': `Bearer ${token}`,
+            //             'Content-Type': 'multipart/form-data'
+            //         },
+            //         timeout: 10000
+            //     });
 
-                console.log("Réponse de mise à jour de l'article (image):", response.data);
-                return response.data.data;
-            } else {
-                // Requête standard pour les mises à jour sans image
-                const response = await axios.put<{ data: Article }>(`${API_URL}/articles/${id}`, updateData, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 10000
-                });
+            //     console.log("Réponse de mise à jour de l'article (image):", response.data);
+            //     return response.data.data;
+            // } else {
+            // Requête standard pour les mises à jour sans image
+            const response = await axios.put<{ data: Article }>(`${API_URL}/articles/${id}`, updateData, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 10000
+            });
 
-                console.log("Réponse de mise à jour de l'article:", response.data);
-                return response.data.data;
-            }
+            console.log("Réponse de mise à jour de l'article:", response.data);
+            return response.data.data;
+            // }
         } catch (error) {
             console.error('Erreur détaillée lors de la mise à jour de l\'article', error);
 

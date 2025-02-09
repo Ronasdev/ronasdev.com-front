@@ -52,6 +52,7 @@ export const categoryService = {
                     'Content-Type': 'application/json'
                 }
             });
+            console.log("createCategoryServ: ", response)
             return response.data.data;
         } catch (error) {
             console.error('Erreur lors de la création de la catégorie', error);
