@@ -436,9 +436,9 @@ const ArticlesAdminPage: React.FC = () => {
                                                 <div className="text-sm font-medium text-gray-900">
                                                     {article.title}
                                                 </div>
-                                                <div className="text-sm text-gray-500 truncate max-w-[250px]">
-                                                    {article.excerpt || 'Pas d\'extrait'}
-                                                </div>
+                                                <div className="text-sm text-gray-500 truncate max-w-[250px]"
+                                                dangerouslySetInnerHTML={{__html: article.excerpt || 'Pas d\'extrait'}}
+                                                />
                                             </div>
                                         </div>
                                     </td>
@@ -446,7 +446,7 @@ const ArticlesAdminPage: React.FC = () => {
                                     {/* Catégories */}
                                     <td className="p-3">
                                         <div className="flex flex-wrap gap-1">
-                                            {article.categories?.map(category => (
+                                            {article.categories_names?.map(category => (
                                                 <span
                                                     // key={category.id} 
                                                     key={category}
@@ -504,9 +504,12 @@ const ArticlesAdminPage: React.FC = () => {
                                                 size="sm"
                                                 onClick={() => setState(prev => ({
                                                     ...prev,
-                                                    selectedArticle: { ...article },
+                                                    selectedArticle: { ...article },    
+                                                    // selectedCategories: article.category_ids
+                                                    //     ? article.category_ids.split(',').map(Number)
+                                                    //     : [],
                                                     selectedCategories: article.category_ids
-                                                        ? article.category_ids.split(',').map(Number)
+                                                        ? article.category_ids.map(Number)
                                                         : [],
                                                     isArticleModalOpen: true
                                                 }))}

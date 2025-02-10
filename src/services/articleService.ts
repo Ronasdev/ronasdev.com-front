@@ -20,7 +20,7 @@ export interface Article {
     featured_image?: string | null;
     categories?: string[];
     category_ids?: string;
-    categories_names?: string;
+    categories_names?: string[];
     created_at?: string;
     updated_at?: string;
 }
@@ -50,12 +50,13 @@ export const articleService = {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get<{ data: GetAllArticleResponse }>(`${API_URL}/articles`, {
-                params: { page, per_page: perPage },
+                params: { admin:'oui', page, per_page: perPage },
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
+            console.log("Récupération de tous les articles: ", response.data);
             return response.data.data;
         } catch (error) {
             console.error('Erreur lors de la récupération des articles', error);
@@ -221,7 +222,7 @@ export const articleService = {
                 data: { url: string }
             }>(`${API_URL}/articles/01/image`, formData, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }
             });

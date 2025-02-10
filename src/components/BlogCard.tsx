@@ -159,9 +159,10 @@ const BlogCard: React.FC<BlogCardProps> = ({
         <p className={`
            mb-4
            ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
-         `}>
-          {post.excerpt}
-        </p>
+           `}
+           dangerouslySetInnerHTML={{ __html: post.excerpt }}
+           
+           />
         {/* Lien de lecture et le partage de l'article*/}
         <div className="flex items-center justify-between">
           {/* Lien de lecture */}
