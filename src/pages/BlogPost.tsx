@@ -202,7 +202,7 @@ const BlogPost = () => {
           {/* Boutons de partage */}
           <div className="mt-12">
             <ShareButtons 
-              url={`/blog/${post.slug}`} 
+              url={`${window.location.origin}/blog/${post.slug}`} 
               title={post.title} 
             />
           </div>

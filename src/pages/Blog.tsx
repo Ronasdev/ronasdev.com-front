@@ -505,7 +505,7 @@ const Blog: React.FC = () => {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5 }}
                   className={`grid ${viewMode === "grid"
-                    ? "grid-cols-1 md:grid-cols-2 gap-6"
+                    ? "grid-cols-1 md:grid-cols-2 gap-6 "
                     : "grid-cols-1 gap-4"
                     }`}
                 >
@@ -519,7 +519,7 @@ const Blog: React.FC = () => {
                   ))}
                 </motion.div>
 
-                {totalPages > 0 && (
+                {totalPages > 1 && (
                   <div className="mt-8 flex justify-center">
                     <Pagination
                       currentPage={currentPage}

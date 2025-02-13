@@ -108,6 +108,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
       ${theme === 'dark'
         ? 'bg-secondary-dark/10 border border-secondary-dark/20'
         : 'bg-white'}
+        ${viewMode === 'list' ? 'flex h-[250px]' : ''}
     `}>
       {/* Image de couverture */}
       <img
@@ -115,6 +116,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
         alt={post.title}
         className={`
           w-full h-48 object-cover
+          ${viewMode === 'list' ? 'w-1/3  h-[100%] ' : ''}
           ${theme === 'dark' ? 'opacity-80' : 'opacity-100'}
         `}
       />
@@ -157,7 +159,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
         </h2>
         {/* Extrait de l'article */}
         <p className={`
-           mb-4
+           mb-4 text-wrap
            ${theme === 'dark' ? 'text-gray-300' : 'text-secondary-light'}
            `}
            dangerouslySetInnerHTML={{ __html: post.excerpt }}
